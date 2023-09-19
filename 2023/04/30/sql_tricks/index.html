@@ -37,10 +37,10 @@
 <meta property="og:image" content="https://glassyamadeus.github.io/2023/04/30/sql_tricks/8.png">
 <meta property="og:image" content="https://glassyamadeus.github.io/2023/04/30/sql_tricks/9.png">
 <meta property="og:image" content="https://glassyamadeus.github.io/2023/04/30/sql_tricks/10.png">
-<meta property="og:image" content="https://glassyamadeus.github.io/2023/04/30/sql_tricks/12.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/04/30/sql_tricks/11.png">
 <meta property="og:image" content="https://glassyamadeus.github.io/2023/04/30/sql_tricks/12.png">
 <meta property="article:published_time" content="2023-04-30T04:00:00.000Z">
-<meta property="article:modified_time" content="2023-09-19T02:10:16.302Z">
+<meta property="article:modified_time" content="2023-09-19T02:15:40.699Z">
 <meta property="article:author" content="Glassy@Amadeus">
 <meta property="article:tag" content="byPass">
 <meta property="article:tag" content="语义分析">
@@ -212,7 +212,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-09-19 10:10:16" itemprop="dateModified" datetime="2023-09-19T10:10:16+08:00">2023-09-19</time>
+                <time title="Modified: 2023-09-19 10:15:40" itemprop="dateModified" datetime="2023-09-19T10:15:40+08:00">2023-09-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -241,28 +241,41 @@
 <p>2.基于词法Token变化</p>
 <p>其中基于弱规则词法黑名单的算法被用于大家熟知的<a target="_blank" rel="noopener" href="https://github.com/client9/libinjection">Libinjection</a>，主要通过将用户的输入进行Token化，然后再去匹配一份维护好了的SQL注入黑名单规则库，从而有效发现SQL注入问题。</p>
 <p>其中各种输入对应词法如下，</p>
-<p><img src="1.png" alt="1"></p>
+<img src="/2023/04/30/sql_tricks/1.png" class="" title="img1">
+
 <p>检测SQL注入的流程如下，</p>
-<p><img src="2.png" alt="2"></p>
+<img src="/2023/04/30/sql_tricks/2.png" class="" title="img2">
+
 <p>而基于Token变化的检测算法，规则比上述算法更弱，只需计算用户的输入是否横跨了多个Token，如果横跨了多个Token则判断为存在SQL注入，</p>
-<p><img src="3.png" alt="3"></p>
+<img src="/2023/04/30/sql_tricks/3.png" class="" title="img3">
+
 <h3 id="语义分析"><a href="#语义分析" class="headerlink" title="语义分析"></a>语义分析</h3><p>和词法分析相比，语义分析会做的更加细致，它不仅仅关注SQL的Token，更会去关注用户的输入对具体的SQL结构造成了怎样的改变，这样能够更大程度的解决词法分析仅仅基于Token造成的误报问题。</p>
-<p><img src="4.png" alt="4"></p>
-<p><img src="5.png" alt="5"></p>
+<img src="/2023/04/30/sql_tricks/4.png" class="" title="img4">
+
+<img src="/2023/04/30/sql_tricks/5.png" class="" title="img5">
+
 <h2 id="绕过思路"><a href="#绕过思路" class="headerlink" title="绕过思路"></a>绕过思路</h2><h3 id="预期外的SQL特性"><a href="#预期外的SQL特性" class="headerlink" title="预期外的SQL特性"></a>预期外的SQL特性</h3><h4 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h4><p>语义分析会面临的一个最大的难题就是：虽然大部分的数据库语法都比较相似，但不同数据库之间又都有自己独有的一些特性在里面，这样如果攻击者对某一款数据库足够了解，就可能通过一些特殊的SQL特性进行SQL注入，而语义分析之前又未能兼容该特性，从而导致语义分析引擎报错，失去检测能力。</p>
 <h4 id="具体案例-1"><a href="#具体案例-1" class="headerlink" title="具体案例-1"></a>具体案例-1</h4><p>ODBC是一个大部分SQL都支持的特性，官方介绍如下</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;identifier expr&#125; is ODBC escape syntax and is accepted for ODBC compatibility. The value is expr. The &#123; and &#125; curly braces in the syntax should be written literally; they are not metasyntax as used elsewhere in syntax descriptions.</span><br></pre></td></tr></table></figure>
 <p>由于ODBC本身的自由性，可以构造出很多非常复杂的SQL语句，从而导致语义分析很难进行识别，</p>
-<p><img src="6.png" alt="6"></p>
+<img src="/2023/04/30/sql_tricks/6.png" class="" title="img6">
+
 <h4 id="具体案例-2"><a href="#具体案例-2" class="headerlink" title="具体案例-2"></a>具体案例-2</h4><p>MySQL除了可以使用 select 查询表中的数据，也可使用 handler 语句，这条语句使我们能够一行一行的浏览一个表中的数据。它是MySQL专用的语句，并没有包含到SQL标准中。handler语句由于可以查询数据，因此也是SQL注入中一个十分方便且鲜为人知的关键字。</p>
-<p><img src="7.png" alt="7"></p>
+<img src="/2023/04/30/sql_tricks/7.png" class="" title="img7">
+
 <h4 id="具体案例-3"><a href="#具体案例-3" class="headerlink" title="具体案例-3"></a>具体案例-3</h4><p>几乎大部分主流语义分析引擎、主流数据库都将 \ 理解为转义字符，但PSQL并不这么理解，对 \ 理解上的差异使得绕过PSQL变得十分容易，</p>
-<p><img src="8.png" alt="8"></p>
+<img src="/2023/04/30/sql_tricks/8.png" class="" title="img8">
+
 <h3 id="注释欺骗的艺术"><a href="#注释欺骗的艺术" class="headerlink" title="注释欺骗的艺术"></a>注释欺骗的艺术</h3><h4 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h4><p>大部分语义分析往往都是能够识别出注释，并在分析时省略注释后面语句的分析，从而实现更好的性能，那么如果攻击者能够成功构造出语义分析引擎认为是注释而实际数据库并不认为是注释的特殊关键字，再把攻击的Payload隐藏在注释之后，就能成功欺骗语义分析，光明正大的进行SQL注入。</p>
 <h4 id="具体案例-1-1"><a href="#具体案例-1-1" class="headerlink" title="具体案例-1"></a>具体案例-1</h4><p>存在不少语义分析引擎，在解析数据流的时候，会将 // 作为注释处理，忽视后面的内容，而大部分主流数据库，并不将 // 作为注释。</p>
-<p><img src="9.png" alt="9"></p>
-<h4 id="具体案例-2-1"><a href="#具体案例-2-1" class="headerlink" title="具体案例-2"></a>具体案例-2</h4><p>语义分析引擎往往认为 \r \n 都是注释的结束符，但很多数据库(MYSQL\ORACLE等)只认为 \n 是注释结束符，利用注释结束符理解的差异可以构造绕过<br><img src="10.png" alt="10"></p>
-<h4 id="具体案例-3-1"><a href="#具体案例-3-1" class="headerlink" title="具体案例-3"></a>具体案例-3</h4><p>JAVA的mybatis框架会对用户输入的参数做一些特殊的处理，尤其针对形如 #{param} 这种写法的数据的额外处理，会对语义分析造成极强的欺骗性<br><img src="12.png" alt="11"><br><img src="12.png" alt="11"></p>
+<img src="/2023/04/30/sql_tricks/9.png" class="" title="img9">
+
+<h4 id="具体案例-2-1"><a href="#具体案例-2-1" class="headerlink" title="具体案例-2"></a>具体案例-2</h4><p>语义分析引擎往往认为 \r \n 都是注释的结束符，但很多数据库(MYSQL\ORACLE等)只认为 \n 是注释结束符，利用注释结束符理解的差异可以构造绕过</p>
+<img src="/2023/04/30/sql_tricks/10.png" class="" title="img10">
+
+<h4 id="具体案例-3-1"><a href="#具体案例-3-1" class="headerlink" title="具体案例-3"></a>具体案例-3</h4><p>JAVA的mybatis框架会对用户输入的参数做一些特殊的处理，尤其针对形如 #{param} 这种写法的数据的额外处理，会对语义分析造成极强的欺骗性</p>
+<img src="/2023/04/30/sql_tricks/11.png" class="" title="img11">
+<img src="/2023/04/30/sql_tricks/12.png" class="" title="img12">
 <h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>该篇文章内容为笔者在2023年4月1日阿里先知白帽大会上的分享议题PPT《让SQL注入无所遁形》的分享。内容中删去了防御者视角下的探索，主要展示攻击者如何去绕过使用语义分析算法的安全设备，具体内容详见<a target="_blank" rel="noopener" href="https://github.com/GlassyAmadeus/glassyamadeus.github.io/blob/master/pdf/sql_tricks.pdf">PPT</a>。</p>
 
     </div>
