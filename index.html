@@ -188,7 +188,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2024-01-31 11:53:04 / Modified: 11:43:31" itemprop="dateCreated datePublished" datetime="2024-01-31T11:53:04+08:00">2024-01-31</time>
+              <time title="Created: 2024-01-31 11:53:04 / Modified: 13:48:00" itemprop="dateCreated datePublished" datetime="2024-01-31T11:53:04+08:00">2024-01-31</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -211,8 +211,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>在Oracle官方最新发布的January 2024补丁中，修复了一个基于Weblogic T3\IIOP协议的远程命令执行漏洞CVE-2024-20931，该漏洞是笔者在2023年10月提交给Oracle，从原理上CVE-2023-21839补丁的绕过，其中涉及到一个JNDI的新攻击面，在这里分享出来。</p>
-<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="CVE-2023-21839概述"><a href="#CVE-2023-21839概述" class="headerlink" title="CVE-2023-21839概述"></a>CVE-2023-21839概述</h3><p>当Weblogic通过T3\IIOP进行绑定的远程对象实现了OpaqueReference接口的话，那么在对该对象进行lookup时，会调用这个对象的getReferent函数进行查询。</p>
+          <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>在Oracle官方最新发布的January 2024补丁中，修复了一个基于Weblogic T3\IIOP协议的远程命令执行漏洞CVE-2024-20931，该漏洞是笔者在2023年10月提交给Oracle，原理上属于CVE-2023-21839补丁的绕过，其中涉及到一个JNDI的新攻击面，在这里分享出来。</p>
+<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="CVE-2023-21839概述"><a href="#CVE-2023-21839概述" class="headerlink" title="CVE-2023-21839概述"></a>CVE-2023-21839概述</h3><p>当Weblogic通过T3\IIOP进行绑定的远程对象实现了OpaqueReference接口，那么在对该对象进行lookup时，会调用这个对象的getReferent函数进行查询。</p>
 <img src="/2024/01/31/CVE_2024_20931/1.png" class="" title="CVE_2024_20931">
 <p>而碰巧有一个名为ForeignOpaqueReference的对象，它的getReferent函数在进行远程对象查询的时候，会再次发起JNDI查询，从而造成了JNDI注入</p>
 <img src="/2024/01/31/CVE_2024_20931/2.png" class="" title="CVE_2024_20931">
@@ -223,9 +223,9 @@
 <li>通过lookup查询该恶意对象，触发ForeignOpaqueReference.getReferent的调用，从而造成恶意JNDI注入。<img src="/2024/01/31/CVE_2024_20931/3.png" class="" title="CVE_2024_20931"></li>
 </ol>
 <h3 id="CVE-2023-21839补丁分析"><a href="#CVE-2023-21839补丁分析" class="headerlink" title="CVE-2023-21839补丁分析"></a>CVE-2023-21839补丁分析</h3><p>Oracle官方于January 2023对该漏洞进行了修复，补丁内容分为两部分，</p>
-<p>第一部分，闲置了绑定ForeignOpaqueReference对象时对jndiEnvironment中providerURL的设置，</p>
+<p>第一部分，限制了绑定ForeignOpaqueReference对象时对jndiEnvironment中providerURL的设置，</p>
 <img src="/2024/01/31/CVE_2024_20931/4.png" class="" title="CVE_2024_20931">
-<p>第二部分对loopup的JNDI链接的协议也做了比较严格的闲置，</p>
+<p>第二部分对loopup的JNDI链接的协议也做了比较严格的限制，</p>
 <img src="/2024/01/31/CVE_2024_20931/5.png" class="" title="CVE_2024_20931">
 <p>直观上去看，想继续通过ForeignOpaqueReference去做JNDI注入的路已经被堵死了。</p>
 <h3 id="CVE-2024-20931的挖掘"><a href="#CVE-2024-20931的挖掘" class="headerlink" title="CVE-2024-20931的挖掘"></a>CVE-2024-20931的挖掘</h3><p>经过一定的分析，可以感觉到，现在有三条路是可能走的通的，<br>第一条路，寻找别的实现OpaqueReference接口的类的getReferent寻求突破（比较有意思的是ForeignOpaqueReference在两个package链接下都有，且代码有一些细微的差别），</p>
